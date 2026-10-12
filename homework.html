@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework Tracker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body { background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 2rem; }
+  h1 { font-size: 2rem; margin-bottom: 1rem; }
+  h2 { margin: 1.5rem 0 0.5rem; color: #58a6ff; }
+  .year-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .year-tabs button {
+    background: #161b22; color: #e6edf3; border: 1px solid #30363d;
+    padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+  }
+  .year-tabs button.active { background: #1f6feb; border-color: #1f6feb; }
+  table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 10px; overflow: hidden; }
+  th, td { border: 1px solid #30363d; padding: 0.6rem 0.8rem; text-align: left; }
+  th { background: #21262d; }
+  td input[type="text"], td input[type="date"] {
+    background: transparent; border: none; color: #e6edf3; width: 100%;
+  }
+  td input[type="checkbox"] { width: 1.2rem; height: 1.2rem; cursor: pointer; }
+  tr.done td { opacity: 0.5; text-decoration: line-through; }
+  tr.done td:last-child, tr.done td:nth-last-child(2) { text-decoration: none; opacity: 1; }
+  button.add { margin-top: 0.75rem; background: #238636; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; }
+  button.del { background: none; border: none; color: #f85149; cursor: pointer; font-size: 1rem; }
+</style>
+</head>
+<body>
+  <h1>📚 Homework Tracker</h1>
+  <div class="year-tabs" id="yearTabs"></div>
+  <h2 id="yearTitle"></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Homework</th>
+        <th>Date Given</th>
+        <th>Due</th>
+        <th>Done ✓</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <button class="add" onclick="addRow()">+ Add Homework</button>
+
+<script>
+  const years = ["2023-24", "2024-25", "2025-26", "2026-27"];
+  let currentYear = years[2];
+  const data = JSON.parse(localStorage.getItem("homework") || "{}");
+
+  function save() { localStorage.setItem("homework", JSON.stringify(data)); }
+
+  function renderTabs() {
+    document.getElementById("yearTabs").innerHTML = years.map(y =>
+      `<button class="${y === currentYear ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>`).join("");
+  }
+
+  function switchYear(y) { currentYear = y; render(); }
+
+  function render() {
+    renderTabs();
+    document.getElementById("yearTitle").textContent = "Academic Year " + currentYear;
+    const rows = data[currentYear] || [];
+    document.getElementById("rows").innerHTML = rows.map((r, i) => `
+      <tr class="${r.done ? 'done' : ''}">
+        <td><input type="text" value="${r.subject}" onchange="update(${i},'subject',this.value)" placeholder="Math"></td>
+        <td><input type="text" value="${r.task}" onchange="update(${i},'task',this.value)" placeholder="Exercise 5"></td>
+        <td><input type="date" value="${r.given}" onchange="update(${i},'given',this.value)"></td>
+        <td><input type="date" value="${r.due}" onchange="update(${i},'due',this.value)"></td>
+        <td style="text-align:center"><input type="checkbox" ${r.done ? 'checked' : ''} onchange="update(${i},'done',this.checked); render();"></td>
+        <td><button class="del" onclick="del(${i})">✕</button></td>
+      </tr>`).join("");
+  }
+
+  function update(i, key, val) { data[currentYear][i][key] = val; save(); if (key === 'done') {} }
+  function addRow() {
+    data[currentYear] = data[currentYear] || [];
+    data[currentYear].push({ subject: "", task: "", given: "", due: "", done: false });
+    save(); render();
+  }
+  function del(i) { data[currentYear].splice(i, 1); save(); render(); }
+
+  render();
+</script>
+</body>
+</html>

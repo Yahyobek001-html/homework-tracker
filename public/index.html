@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework Tracker</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body { background:#0d1117; color:#e6edf3; min-height:100vh; padding:2rem; }
+  h1 { font-size:2rem; margin-bottom:1rem; }
+  h2 { margin:1.5rem 0 .5rem; color:#58a6ff; }
+  button { background:#1f6feb; color:#fff; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; }
+  button.secondary { background:#30363d; }
+  button.add { background:#238636; margin-top:.75rem; }
+  button.del { background:none; color:#f85149; font-size:1rem; padding:.2rem .5rem; }
+  button.mini { background:#238636; padding:.25rem .6rem; font-size:.8rem; margin-left:.5rem; }
+  input { background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:.5rem; }
+  .card { max-width:420px; margin:4rem auto; background:#161b22; padding:2rem; border-radius:12px; border:1px solid #30363d; }
+  .card input { width:100%; margin-bottom:.75rem; }
+  .error { color:#f85149; margin-bottom:.75rem; display:none; }
+  table { width:100%; border-collapse:collapse; background:#161b22; border-radius:10px; overflow:hidden; }
+  th,td { border:1px solid #30363d; padding:.6rem .8rem; text-align:left; }
+  th { background:#21262d; }
+  td input[type=text],td input[type=date] { border:none; background:transparent; width:100%; }
+  tr.done td { opacity:.5; text-decoration:line-through; }
+  tr.done td:nth-last-child(-n+2) { text-decoration:none; opacity:1; }
+  #app { display:none; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:.5rem; }
+  .badge { background:#f0b429; color:#000; border-radius:999px; padding:.15rem .6rem; font-size:.8rem; font-weight:700; margin-left:.5rem; }
+  .stats { color:#8b949e; margin-bottom:1rem; }
+  .tabs { display:flex; gap:.5rem; margin-bottom:1rem; }
+  .tabs button.active { background:#1f6feb; border:1px solid #1f6feb; }
+  .tabs button:not(.active) { background:#161b22; border:1px solid #30363d; }
+  .period { background:#161b22; border:1px solid #30363d; border-left:4px solid #1f6feb; border-radius:8px; padding:.75rem 1rem; margin-bottom:.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem; }
+  .period b { color:#58a6ff; }
+  .member { display:flex; justify-content:space-between; background:#161b22; border:1px solid #30363d; border-radius:8px; padding:.75rem 1rem; margin-bottom:.5rem; }
+  .bar { background:#30363d; border-radius:999px; height:8px; width:140px; display:inline-block; vertical-align:middle; margin:0 .5rem; overflow:hidden; }
+  .bar > div { background:#238636; height:100%; }
+</style>
+</head>
+<body>
+
+<div id="auth" class="card">
+  <h1>📚 Homework Tracker</h1>
+  <p class="error" id="err"></p>
+  <input id="u" placeholder="Username">
+  <input id="p" type="password" placeholder="Password">
+  <div style="display:flex;gap:.5rem">
+    <button onclick="login()">Sign In</button>
+    <button class="secondary" onclick="register()">Register</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <h1>📚 Homework Tracker <span id="roleBadge"></span></h1>
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <span id="myAvatar"></span>
+      <span id="who" style="color:#8b949e"></span>
+      <button class="secondary" onclick="changeAvatar()">🖼 Change Picture</button>
+      <button class="secondary" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div id="announcementBox" style="display:none;background:#1f2937;border:1px solid #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;"></div>
+  <div id="ownerPanel" style="display:none;background:#161b22;border:1px dashed #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">
+    <b>🛠 Creator Panel</b> — post an announcement to everyone:
+    <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem;">
+    <button onclick="postAnnouncement()">Post</button>
+  </div>
+
+  <div class="tabs">
+    <button id="tabToday" class="active" onclick="tab('today')">📅 Today</button>
+    <button id="tabHw" onclick="tab('hw')">📝 All Homework</button>
+    <button id="tabMembers" onclick="tab('members')" style="display:none">👥 Members</button>
+  </div>
+
+  <div id="viewToday">
+    <h2 id="todayTitle"></h2>
+    <p class="stats">Your timetable for today — click "+ Homework" next to a subject to quickly add homework.</p>
+    <div id="todayList"></div>
+  </div>
+
+  <div id="viewHw" style="display:none">
+    <h2>Academic Year 2026-27</h2>
+    <p class="stats" id="stats"></p>
+    <table>
+      <thead><tr><th>Subject</th><th>Homework</th><th>Date Given</th><th>Due</th><th>Done ✓</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <button class="add" onclick="addRow()">+ Add Homework</button>
+  </div>
+
+  <div id="viewMembers" style="display:none">
+    <h2>All Members</h2>
+    <div id="memberList"></div>
+  </div>
+</div>
+
+<script>
+// Timetable (from your class schedule) — edit freely
+const TIMETABLE = {
+  Monday: [
+    ["1","KS","Ms. Qydina","106"],["2","NatLang","Ms. Qydina","106"],["3","English","Ms. Feruza","108"],
+    ["4","Math","Ms. Zamira","102"],["5","Computing","Mr. Uche","103"],["6","Science","Ms. Hazel","205"],["7","His_World","Mr. Abrorbek","206"]
+  ],
+  Tuesday: [
+    ["1","Science","Ms. Hazel","205"],["2","GP","Mr. Nathan","109"],["3","NatLang","Ms. Qydina","106"],
+    ["4","Russian","Ms. Zamira","105"],["5","Math","Ms. Zamira","102"],["6","Geo","Ms. Sevara","107"],["7","Physical education","Sport Zal",""]
+  ],
+  Wednesday: [
+    ["1","English","Ms. Feruza","108"],["2","Math","Ms. Zamira","102"],["3","Russian","Ms. Zamira","105"],
+    ["4","NatLang","Ms. Qydina","106"],["5","Music","Mr. Rustam","105"],["6","Uzb_Lit","Ms. Qydina","106"],["7","His_Uzb","Mr. Abrorbek","206"]
+  ],
+  Thursday: [
+    ["1","Computing","Mr. Uche","103"],["2","His_Uzb","Mr. Abrorbek","206"],["3","English","Ms. Feruza","108"],
+    ["4","Physical education","Sport Zal",""],["5","Math","Ms. Zamira","102"],["6","Uzb_Lit","Ms. Qydina","106"],["7","Science","Ms. Hazel","204"]
+  ],
+  Friday: [
+    ["1","Math","Ms. Zamira","102"],["2","Drawing","Ms. Maftuna",""],["3","Science","Ms. Hazel","202"],
+    ["4","Edu","Ms. Lobar","207"],["5","GP","Mr. Nathan","109"],["6","English","Ms. Feruza","108"]
+  ]
+};
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+let me = null, rows = [], currentTab = 'today';
+
+async function api(url, opts={}) {
+  const r = await fetch(url, { headers:{'Content-Type':'application/json'}, ...opts });
+  if (r.status === 401) { showAuth(); throw new Error("auth"); }
+  return r.json();
+}
+function showAuth(){ document.getElementById('auth').style.display='block'; document.getElementById('app').style.display='none'; }
+
+async function login(){
+  const r = await api('/api/login',{method:'POST',body:JSON.stringify({username:u.value.trim(),password:p.value})});
+  if (r.error) return err.textContent = r.error, err.style.display='block';
+  err.style.display='none'; init();
+}
+async function register(){
+  const r = await api('/api/register',{method:'POST',body:JSON.stringify({username:u.value.trim(),password:p.value})});
+  if (r.error) return err.textContent = r.error, err.style.display='block';
+  err.style.display='none'; init();
+}
+async function logout(){ await api('/api/logout',{method:'POST'}); showAuth(); }
+
+async function init(){
+  try { me = await api('/api/me'); } catch { return; }
+  auth.style.display='none'; app.style.display='block';
+  who.textContent = me.username;
+  myAvatar.innerHTML = avatarImg(me.avatar, 32);
+  roleBadge.innerHTML = me.role === 'owner' ? '<span class="badge">🛠 CREATOR</span>' : '';
+  ownerPanel.style.display = me.role === 'owner' ? '' : 'none';
+  tabMembers.style.display = me.role === 'owner' ? '' : 'none';
+  const ann = await api('/api/announcement');
+  if (ann.text) { announcementBox.style.display=''; announcementBox.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text); }
+  rows = await api('/api/homework');
+  renderToday(); renderHw(); renderMembers();
+}
+
+function tab(t){
+  currentTab = t;
+  ['Today','Hw','Members'].forEach(x=>{
+    document.getElementById('tab'+x).classList.toggle('active', ('tab'+x).toLowerCase() === 'tab'+t || (t==='hw'&&x==='Hw'));
+  });
+  tabToday.classList.toggle('active', t==='today');
+  tabHw.classList.toggle('active', t==='hw');
+  tabMembers.classList.toggle('active', t==='members');
+  viewToday.style.display = t==='today'?'':'none';
+  viewHw.style.display = t==='hw'?'':'none';
+  viewMembers.style.display = t==='members'?'':'none';
+}
+
+function todayName(){ return DAYS[new Date().getDay()]; }
+
+function renderToday(){
+  const day = todayName();
+  todayTitle.textContent = "Today: " + day + " (" + new Date().toLocaleDateString() + ")";
+  const items = TIMETABLE[day] || [];
+  todayList.innerHTML = items.length === 0
+    ? '<p class="stats">No school today 🎉</p>'
+    : items.map(([p,subj,teacher,room])=>{
+        const hw = rows.filter(r=>r.subject===subj);
+        const pending = hw.filter(r=>!r.done).length;
+        return `<div class="period">
+          <div><b>Period ${p}</b> — ${subj}<br><small style="color:#8b949e">${teacher}${room?' · Room '+room:''}</small></div>
+          <div>
+            ${pending?`<small style="color:#f0b429">${pending} pending</small>`:''}
+            <button class="mini" onclick="quickAdd('${subj}')">+ Homework</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+async function quickAdd(subj){
+  const task = prompt(`Homework for ${subj}:`);
+  if (!task) return;
+  const today = new Date().toISOString().slice(0,10);
+  await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27',subject:subj,task,given:today})});
+  rows = await api('/api/homework');
+  renderToday(); renderHw();
+}
+
+function renderHw(){
+  const list = rows.filter(r=>r.year==='2026-27');
+  const done = list.filter(r=>r.done).length;
+  stats.textContent = `${done}/${list.length} done` + (me?.role==='owner' ? ` — total across all years: ${rows.filter(r=>r.done).length}/${rows.length}` : '');
+  document.getElementById('rows').innerHTML = list.map(r=>`
+    <tr class="${r.done?'done':''}">
+      <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="Math"></td>
+      <td><input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="Exercise 5"></td>
+      <td><input type="date" value="${r.given}" onchange="saveRow(${r.id},'given',this.value)"></td>
+      <td><input type="date" value="${r.due}" onchange="saveRow(${r.id},'due',this.value)"></td>
+      <td style="text-align:center"><input type="checkbox" ${r.done?'checked':''} onchange="toggleDone(${r.id},this.checked)"></td>
+      <td><button class="del" onclick="delRow(${r.id})">✕</button></td>
+    </tr>`).join('');
+}
+function avatarImg(src, size){
+  return src
+    ? `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;vertical-align:middle">`
+    : `<span style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:#30363d;vertical-align:middle;text-align:center;line-height:${size}px">👤</span>`;
+}
+function esc(s){return (s||'').replace(/"/g,'&quot;');}
+
+async function changeAvatar(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      await api('/api/me', { method:'PATCH', body: JSON.stringify({ avatar: reader.result }) });
+      me = await api('/api/me'); myAvatar.innerHTML = avatarImg(me.avatar, 32); renderMembers();
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+async function postAnnouncement(){
+  const text = annInput.value.trim();
+  const r = await api('/api/announcement', { method:'POST', body: JSON.stringify({ text }) });
+  if (r.error) return alert(r.error);
+  annInput.value = '';
+  const ann = await api('/api/announcement');
+  announcementBox.style.display=''; announcementBox.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text);
+}
+
+async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({[key]:val})}); rows.find(r=>r.id===id)[key]=val; renderToday(); }
+async function toggleDone(id,checked){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})}); rows.find(r=>r.id===id).done=checked; renderHw(); renderToday(); }
+async function addRow(){ await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27'})}); rows = await api('/api/homework'); renderHw(); }
+async function delRow(id){ await api('/api/homework/'+id,{method:'DELETE'}); rows = rows.filter(r=>r.id!==id); renderHw(); renderToday(); }
+
+async function renderMembers(){
+  const m = await api('/api/members');
+  memberList.innerHTML = m.map(u=>`
+    <div class="member">
+      <div>${avatarImg(u.avatar, 28)} <b>${esc(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}</div>
+      <div>
+        ${u.role==='owner' ? '' : `<button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="viewMember(${u.id},'${esc(u.username)}')">👁 View</button>
+        <button class="del" onclick="deleteMember(${u.id},'${esc(u.username)}')">🗑 Delete</button>`}
+      </div>
+    </div>`).join('');
+}
+
+async function deleteMember(id, name){
+  if (!confirm(`Delete account "${name}" and all their homework?`)) return;
+  await api('/api/members/'+id, { method:'DELETE' });
+  renderMembers();
+}
+
+async function viewMember(id, name){
+  const hw = await api('/api/members/'+id+'/homework');
+  const list = hw.filter(r=>r.year==='2026-27');
+  if (!list.length) return alert(name + " has no homework yet.");
+  const win = window.open('', '_blank');
+  win.document.write(`<body style="background:#0d1117;color:#e6edf3;font-family:Segoe UI,sans-serif;padding:2rem">
+    <h2 style="color:#58a6ff">${name}'s homework</h2>
+    <table border="1" cellpadding="8" style="border-collapse:collapse;border-color:#30363d">
+    <tr><th>Subject</th><th>Homework</th><th>Given</th><th>Due</th></tr>
+    ${list.map(r=>`<tr><td>${r.subject}</td><td>${r.task}</td><td>${r.given}</td><td>${r.due}</td></tr>`).join('')}
+    </table></body>`);
+}
+
+p.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+init();
+</script>
+</body>
+</html>
