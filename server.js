@@ -98,7 +98,7 @@ app.post("/api/register", async (req, res) => {
   try {
     const salt = crypto.randomBytes(16).toString("hex");
     const count = await q("SELECT COUNT(*) AS c FROM users");
-    const role = count[0].c === 0 ? "owner" : "student";
+    const role = Number(count[0].c) === 0 ? "owner" : "student";
     const info = await run("INSERT INTO users (username, password_hash, salt, role) VALUES (?,?,?,?)",
       [username, hash(password, salt), salt, role]);
     const token = crypto.randomBytes(24).toString("hex");
