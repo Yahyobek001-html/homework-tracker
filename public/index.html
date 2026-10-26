@@ -62,11 +62,18 @@
     </div>
   </div>
 
-  <div id="announcementBox" style="display:none;background:#1f2937;border:1px solid #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;"></div>
+  <div id="announcementBox" style="display:none;background:#1f2937;border:1px solid #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">
+    <span id="annText"></span>
+    <span id="annMeta" style="color:#8b949e;font-size:.85rem;margin-left:.5rem"></span>
+    <button id="annClearBtn" onclick="clearAnnouncement()" style="background:#f85149;padding:.25rem .7rem;font-size:.85rem;float:right">🗑 Remove</button>
+    <div style="clear:both"></div>
+  </div>
   <div id="ownerPanel" style="display:none;background:#161b22;border:1px dashed #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">
     <b>🛠 Creator Panel</b> — post an announcement to everyone:
     <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem;">
     <button onclick="postAnnouncement()">Post</button>
+    <button onclick="toggleHistory()" class="secondary" style="background:#30363d">📜 History</button>
+    <div id="annHistory" style="display:none;margin-top:.75rem;border-top:1px dashed #30363d;padding-top:.5rem"></div>
   </div>
 
   <div class="tabs">
@@ -153,7 +160,7 @@ async function init(){
   ownerPanel.style.display = me.role === 'owner' ? '' : 'none';
   tabMembers.style.display = me.role === 'owner' ? '' : 'none';
   const ann = await api('/api/announcement');
-  if (ann.text) { announcementBox.style.display=''; announcementBox.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text); }
+  showAnnouncement(ann);
   rows = await api('/api/homework');
   renderToday(); renderHw(); renderMembers();
 }
@@ -239,11 +246,48 @@ async function changeAvatar(){
 
 async function postAnnouncement(){
   const text = annInput.value.trim();
+  if (!text) return;
   const r = await api('/api/announcement', { method:'POST', body: JSON.stringify({ text }) });
   if (r.error) return alert(r.error);
   annInput.value = '';
-  const ann = await api('/api/announcement');
-  announcementBox.style.display=''; announcementBox.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text);
+  showAnnouncement(await api('/api/announcement'));
+  loadHistory();
+}
+
+function showAnnouncement(ann){
+  if (!ann.text) { announcementBox.style.display='none'; return; }
+  annText.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text);
+  const d = ann.date ? new Date(ann.date) : null;
+  annMeta.textContent = (ann.author ? '— ' + ann.author : '') + (d ? ' · ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '');
+  annClearBtn.style.display = me?.role === 'owner' ? '' : 'none';
+  announcementBox.style.display='';
+}
+
+async function clearAnnouncement(){
+  if (!confirm('Remove this announcement?')) return;
+  const r = await api('/api/announcement', { method:'DELETE' });
+  if (r.error) return alert(r.error);
+  announcementBox.style.display='none';
+  loadHistory();
+}
+
+async function toggleHistory(){
+  const show = annHistory.style.display === 'none';
+  annHistory.style.display = show ? '' : 'none';
+  if (show) await loadHistory();
+}
+
+async function loadHistory(){
+  const list = await api('/api/announcements');
+  if (list.error) return;
+  annHistory.innerHTML = list.length === 0
+    ? '<span style="color:#8b949e">No announcements yet.</span>'
+    : list.map(a => {
+        const d = new Date(a.created_at);
+        return `<div style="padding:.25rem 0;border-bottom:1px solid #21262d">
+          ${esc(a.text)} <span style="color:#8b949e;font-size:.85rem">— ${esc(a.author)} · ${d.toLocaleDateString()}</span>
+        </div>`;
+      }).join('');
 }
 
 async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({[key]:val})}); rows.find(r=>r.id===id)[key]=val; renderToday(); }

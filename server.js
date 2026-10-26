@@ -43,6 +43,12 @@ if (process.env.DATABASE_URL) {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+    CREATE TABLE IF NOT EXISTS announcement_log (
+      id SERIAL PRIMARY KEY,
+      author TEXT DEFAULT '',
+      text TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT now()
+    );
   `);
 } else {
   const { DatabaseSync } = await import("node:sqlite");
@@ -68,6 +74,12 @@ if (process.env.DATABASE_URL) {
       given TEXT DEFAULT '', due TEXT DEFAULT '', done INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+    CREATE TABLE IF NOT EXISTS announcement_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      author TEXT DEFAULT '',
+      text TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
   q = (sql, p = []) => db.prepare(sql).all(...p);
   run = (sql, p = []) => {
@@ -146,7 +158,12 @@ app.patch("/api/me", async (req, res) => {
 
 app.get("/api/announcement", async (req, res) => {
   const rows = await q("SELECT value FROM settings WHERE key = 'announcement'");
-  res.json({ text: rows[0] ? rows[0].value : "" });
+  const meta = await q("SELECT author, created_at FROM announcement_log ORDER BY id DESC LIMIT 1");
+  res.json({
+    text: rows[0] ? rows[0].value : "",
+    author: meta[0] ? meta[0].author : "",
+    date: meta[0] ? meta[0].created_at : ""
+  });
 });
 
 app.post("/api/announcement", async (req, res) => {
@@ -156,7 +173,26 @@ app.post("/api/announcement", async (req, res) => {
   const { text } = req.body || {};
   await run(`INSERT INTO settings (key, value) VALUES ('announcement', ?)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value`, [text || ""]);
+  await run("INSERT INTO announcement_log (author, text) VALUES (?,?)", [user.username, text || ""]);
   res.json({ ok: true });
+});
+
+// Remove the current announcement (creator only)
+app.delete("/api/announcement", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  if (user.role !== "owner") return res.status(403).json({ error: "Only the creator can remove announcements." });
+  await run("UPDATE settings SET value = '' WHERE key = 'announcement'");
+  res.json({ ok: true });
+});
+
+// History of past announcements (creator only)
+app.get("/api/announcements", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  if (user.role !== "owner") return res.status(403).json({ error: "Only the creator can do this." });
+  const rows = await q("SELECT id, author, text, created_at FROM announcement_log ORDER BY id DESC LIMIT 50");
+  res.json(rows);
 });
 
 app.get("/api/homework", async (req, res) => {
