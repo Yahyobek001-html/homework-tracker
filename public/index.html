@@ -78,7 +78,9 @@
 
   <div class="tabs">
     <button id="tabToday" class="active" onclick="tab('today')">📅 Today</button>
+    <button id="tabTomorrow" onclick="tab('tomorrow')">⏭ Tomorrow</button>
     <button id="tabHw" onclick="tab('hw')">📝 All Homework</button>
+    <button id="tabClass" onclick="tab('class')">🏫 Class Info</button>
     <button id="tabMembers" onclick="tab('members')" style="display:none">👥 Members</button>
   </div>
 
@@ -86,6 +88,19 @@
     <h2 id="todayTitle"></h2>
     <p class="stats">Your timetable for today — click "+ Homework" next to a subject to quickly add homework.</p>
     <div id="todayList"></div>
+  </div>
+
+  <div id="viewTomorrow" style="display:none">
+    <h2 id="tomorrowTitle"></h2>
+    <p class="stats">Tomorrow's schedule and the homework you still owe for each subject.</p>
+    <div id="overdueBox"></div>
+    <div id="tomorrowList"></div>
+  </div>
+
+  <div id="viewClass" style="display:none">
+    <h2>🏫 Class 7-01 — Abu Ali Ibn Sino</h2>
+    <p class="stats" id="classStats"></p>
+    <div id="classList"></div>
   </div>
 
   <div id="viewHw" style="display:none">
@@ -171,11 +186,17 @@ function tab(t){
     document.getElementById('tab'+x).classList.toggle('active', ('tab'+x).toLowerCase() === 'tab'+t || (t==='hw'&&x==='Hw'));
   });
   tabToday.classList.toggle('active', t==='today');
+  tabTomorrow.classList.toggle('active', t==='tomorrow');
   tabHw.classList.toggle('active', t==='hw');
+  tabClass.classList.toggle('active', t==='class');
   tabMembers.classList.toggle('active', t==='members');
   viewToday.style.display = t==='today'?'':'none';
+  viewTomorrow.style.display = t==='tomorrow'?'':'none';
   viewHw.style.display = t==='hw'?'':'none';
+  viewClass.style.display = t==='class'?'':'none';
   viewMembers.style.display = t==='members'?'':'none';
+  if (t==='tomorrow') renderTomorrow();
+  if (t==='class') renderClassInfo();
 }
 
 function todayName(){ return DAYS[new Date().getDay()]; }
@@ -199,13 +220,69 @@ function renderToday(){
       }).join('');
 }
 
+function renderTomorrow(){
+  const dayIdx = (new Date().getDay() + 1) % 7;
+  const day = DAYS[dayIdx];
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  tomorrowTitle.textContent = "Tomorrow: " + day + " (" + d.toLocaleDateString() + ")";
+  const items = TIMETABLE[day] || [];
+  const today = new Date().toISOString().slice(0,10);
+
+  const overdue = rows.filter(r=>!r.done && r.due && r.due < today);
+  const dueTomorrow = rows.filter(r=>!r.done && r.due === d.toISOString().slice(0,10));
+  overdueBox.innerHTML = (overdue.length || dueTomorrow.length) ? (
+    (overdue.length ? `<div class="period" style="border-left-color:#f85149"><div><b style="color:#f85149">⏰ Overdue (${overdue.length})</b><br>${overdue.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '') +
+    (dueTomorrow.length ? `<div class="period" style="border-left-color:#f0b429"><div><b style="color:#f0b429">📅 Due tomorrow (${dueTomorrow.length})</b><br>${dueTomorrow.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '')
+  ) : '';
+
+  tomorrowList.innerHTML = items.length === 0
+    ? '<p class="stats">No school tomorrow 🎉</p>'
+    : items.map(([p,subj,teacher,room])=>{
+        const pend = rows.filter(r=>r.subject===subj && !r.done);
+        return `<div class="period" ${pend.length?'style="border-left-color:#f0b429"':''}>
+          <div><b>Period ${p}</b> — ${subj}<br><small style="color:#8b949e">${teacher}${room?' · Room '+room:''}</small>
+          ${pend.length?`<br><small style="color:#f0b429">⏳ ${pend.map(r=>esc(r.task)).join(', ')}</small>`:''}</div>
+          <div><button class="mini" onclick="quickAdd('${subj}')">+ Homework</button></div>
+        </div>`;
+      }).join('');
+}
+
+const CLASS = [
+  { n: "Omadbek Qahhorov", g: "m" },
+  { n: "Yulduzoy Bahodirova", g: "f" },
+  { n: "Yahyobek Rasuljonov", g: "m", creator: true },
+  { n: "Samandar Faxriddinov", g: "m" },
+  { n: "Dilyora Rahmatullayeva", g: "f" },
+  { n: "Saidbek Sirojiddinov", g: "m" },
+  { n: "Muhammadmustafo Mahammadjonov", g: "m" },
+  { n: "Aziza Isomiddinova", g: "f" },
+  { n: "Timur Komilov", g: "m" },
+  { n: "E'zoza Hakimova", g: "f" },
+  { n: "Mubina Abdujabborova", g: "f" },
+  { n: "Mohidavron Rohataliyeva", g: "f" }
+];
+
+function renderClassInfo(){
+  const boys = CLASS.filter(s=>s.g==='m').length;
+  const girls = CLASS.length - boys;
+  classStats.textContent = `12 students — ${boys} boys 👦 · ${girls} girls 👧`;
+  classList.innerHTML = CLASS.map((s,i)=>`
+    <div class="period" style="border-left-color:${s.g==='m'?'#58a6ff':'#f778ba'}">
+      <div>
+        <b>${s.g==='m'?'👦':'👧'} ${esc(s.n)}</b>
+        ${s.creator?'<span class="badge" style="background:#f0b429;color:#000;border-radius:999px;padding:.15rem .6rem;font-size:.8rem;font-weight:700;margin-left:.5rem">🛠 CREATOR</span>':''}
+        <br><small style="color:#8b949e">${s.g==='m'?'Boy':'Girl'} · No. ${i+1}</small>
+      </div>
+    </div>`).join('');
+}
+
 async function quickAdd(subj){
   const task = prompt(`Homework for ${subj}:`);
   if (!task) return;
   const today = new Date().toISOString().slice(0,10);
   await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27',subject:subj,task,given:today})});
   rows = await api('/api/homework');
-  renderToday(); renderHw();
+  renderToday(); renderHw(); if (currentTab==='tomorrow') renderTomorrow();
 }
 
 function renderHw(){
