@@ -49,6 +49,12 @@ if (process.env.DATABASE_URL) {
       text TEXT DEFAULT '',
       created_at TIMESTAMP DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS activity (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      action TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT now()
+    );
   `);
 } else {
   const { DatabaseSync } = await import("node:sqlite");
@@ -80,6 +86,12 @@ if (process.env.DATABASE_URL) {
       text TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS activity (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      action TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
   q = (sql, p = []) => db.prepare(sql).all(...p);
   run = (sql, p = []) => {
@@ -102,6 +114,35 @@ async function authUser(req) {
   const rows = await q("SELECT users.* FROM sessions JOIN users ON users.id = sessions.user_id WHERE token = ?", [token]);
   return rows[0] || null;
 }
+
+// Creator-only activity feed
+async function track(userId, action) {
+  try { await run("INSERT INTO activity (user_id, action) VALUES (?,?)", [userId, action]); } catch {}
+}
+
+// heartbeat ping (every 60s from the client) so the creator can see who's online
+app.post("/api/ping", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  await run("DELETE FROM activity WHERE user_id = ? AND action = '__online__'", [user.id]);
+  await run("INSERT INTO activity (user_id, action) VALUES (?, '__online__')", [user.id]);
+  res.json({ ok: true });
+});
+
+// Creator-only: full activity feed + online list
+app.get("/api/activity", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  if (user.role !== "owner") return res.status(403).json({ error: "Only the creator can see this." });
+  const feed = await q(
+    "SELECT activity.id, activity.action, activity.created_at, users.username " +
+    "FROM activity JOIN users ON users.id = activity.user_id " +
+    "WHERE activity.action <> '__online__' ORDER BY activity.id DESC LIMIT 40");
+  const online = await q(
+    "SELECT users.username FROM activity JOIN users ON users.id = activity.user_id " +
+    "WHERE activity.action = '__online__' ORDER BY activity.id DESC");
+  res.json({ online: online.map(r => r.username), feed });
+});
 
 app.post("/api/register", async (req, res) => {
   const { username, password } = req.body || {};
@@ -208,6 +249,7 @@ app.post("/api/homework", async (req, res) => {
   const { year, subject, task, given, due } = req.body || {};
   const info = await run("INSERT INTO homework (user_id, year, subject, task, given, due) VALUES (?,?,?,?,?,?)",
     [user.id, year, subject || "", task || "", given || "", due || ""]);
+  await track(user.id, `added ${subject || "new"} homework`);
   res.json({ id: info.lastInsertRowid });
 });
 
@@ -221,6 +263,7 @@ app.patch("/api/homework/:id", async (req, res) => {
   await run("UPDATE homework SET subject=?, task=?, given=?, due=?, done=? WHERE id=?",
     [b.subject ?? row.subject, b.task ?? row.task, b.given ?? row.given, b.due ?? row.due,
      ("done" in b ? (b.done ? 1 : 0) : row.done), row.id]);
+  if ("done" in b) await track(user.id, (b.done ? "✅ done" : "↩ undone") + ` ${row.subject || ""} homework`);
   res.json({ ok: true });
 });
 

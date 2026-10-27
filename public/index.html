@@ -73,7 +73,9 @@
     <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem;">
     <button onclick="postAnnouncement()">Post</button>
     <button onclick="toggleHistory()" class="secondary" style="background:#30363d">📜 History</button>
+    <button onclick="toggleActivity()" class="secondary" style="background:#30363d">🌐 Live Activity</button>
     <div id="annHistory" style="display:none;margin-top:.75rem;border-top:1px dashed #30363d;padding-top:.5rem"></div>
+    <div id="activityBox" style="display:none;margin-top:.75rem;border-top:1px dashed #30363d;padding-top:.5rem"></div>
   </div>
 
   <div class="tabs">
@@ -178,6 +180,8 @@ async function init(){
   showAnnouncement(ann);
   rows = await api('/api/homework');
   renderToday(); renderHw(); renderMembers();
+  localStorage.setItem('ht_session', '1');
+  api('/api/ping', { method: 'POST' }).catch(() => {});
 }
 
 function tab(t){
@@ -366,6 +370,33 @@ async function loadHistory(){
         </div>`;
       }).join('');
 }
+
+async function toggleActivity(){
+  const show = activityBox.style.display === 'none';
+  activityBox.style.display = show ? '' : 'none';
+  if (show) await loadActivity();
+}
+
+async function loadActivity(){
+  const a = await api('/api/activity');
+  if (a.error) { activityBox.innerHTML = '<span style="color:#8b949e">Access denied.</span>'; return; }
+  const online = a.online.map(u=>`<b>${esc(u)}</b>`).join(', ') || '<span style="color:#8b949e">nobody</span>';
+  activityBox.innerHTML =
+    `<div style="padding:.4rem 0"><span style="color:#4ac26b">●</span> <b>Online now:</b> ${online}</div>` +
+    (a.feed.length === 0
+      ? '<span style="color:#8b949e">No activity yet.</span>'
+      : a.feed.map(f => {
+          const d = new Date(f.created_at);
+          return `<div style="padding:.25rem 0;border-bottom:1px solid #21262d">
+            <b>${esc(f.username)}</b> ${esc(f.action)} <span style="color:#8b949e;font-size:.85rem">· ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+          </div>`;
+        }).join(''));
+}
+
+// heartbeat so the creator can see who is online
+if (localStorage.getItem('ht_session')) { setInterval(()=>api('/api/ping',{method:'POST'}).catch(()=>{}), 60000); }
+// creator's live activity panel auto-refreshes
+setInterval(()=>{ if (me && me.role==='owner' && activityBox && activityBox.style.display !== 'none') loadActivity(); }, 10000);
 
 async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({[key]:val})}); rows.find(r=>r.id===id)[key]=val; renderToday(); }
 async function toggleDone(id,checked){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})}); rows.find(r=>r.id===id).done=checked; renderHw(); renderToday(); }
