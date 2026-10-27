@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📚 Homework Tracker</title>
 <meta name="theme-color" content="#0b0f1a">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#ff7ac6"/>
+  </linearGradient>
+</defs></svg>
 <style>
   :root {
     --bg: #0b0f1a;
@@ -14,6 +19,11 @@
     --dim: #97a3c4;
     --blue: #6d8dff;
     --pink: #ff7ac6;
+    --grad: linear-gradient(135deg, #6d8dff, #ff7ac6);
+    --grad-soft: linear-gradient(135deg, rgba(109,141,255,.13), rgba(255,122,198,.13));
+    --gradbg: radial-gradient(1100px 600px at 8% -8%, #2b3d8f66, transparent 60%),
+              radial-gradient(900px 520px at 96% 4%, #8f2b6d55, transparent 60%),
+              radial-gradient(700px 700px at 50% 108%, #2b8f6a44, transparent 62%), #0b0f1a;
     --green: #3ddc97;
     --gold: #ffcc5c;
     --red: #ff6b6b;
@@ -23,11 +33,7 @@
   html { scroll-behavior:smooth; }
   body {
     color:var(--txt); min-height:100vh; padding:1.4rem;
-    background:
-      radial-gradient(1100px 600px at 8% -8%, #2b3d8f66, transparent 60%),
-      radial-gradient(900px 520px at 96% 4%, #8f2b6d55, transparent 60%),
-      radial-gradient(700px 700px at 50% 108%, #2b8f6a44, transparent 62%),
-      var(--bg);
+    background: var(--gradbg);
     background-attachment: fixed;
   }
   h1 { font-size:2rem; letter-spacing:-.5px; }
@@ -35,8 +41,8 @@
        background:linear-gradient(90deg,var(--blue),var(--pink));
        -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-.3px; }
   button { border:none; padding:.55rem 1.1rem; border-radius:12px; cursor:pointer; color:#fff; font-weight:600;
-           background:linear-gradient(135deg,#6d8dff,#4a6cf7); transition:transform .16s, box-shadow .16s, filter .16s;
-           box-shadow:0 8px 20px -10px #4a6cf7; }
+           background:var(--grad); transition:transform .16s, box-shadow .16s, filter .16s;
+           box-shadow:0 8px 20px -10px var(--blue); }
   button:hover { transform:translateY(-2px); filter:brightness(1.08); }
   button:active { transform:translateY(0) scale(.98); }
   button.secondary { background:rgba(255,255,255,.08); box-shadow:none; border:1px solid var(--stroke); }
@@ -76,7 +82,7 @@
           background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:.4rem; backdrop-filter:blur(10px); width:fit-content; }
   .tabs button { background:transparent; box-shadow:none; font-size:.9rem; padding:.5rem .95rem; }
   .tabs button:not(.active) { color:var(--dim); }
-  .tabs button.active { background:linear-gradient(135deg,#6d8dff,#8f6dff); box-shadow:0 8px 20px -12px #6d8dff; color:#fff; }
+  .tabs button.active { background:var(--grad); box-shadow:0 8px 20px -12px var(--blue); color:#fff; }
 
   .period { background:var(--card); border:1px solid var(--stroke); border-left:5px solid var(--blue); border-radius:14px;
             padding:.85rem 1rem; margin-bottom:.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.6rem;
@@ -119,6 +125,31 @@
   .ringtxt { font-size:.92rem; color:var(--dim); }
   .ringtxt b { color:var(--txt); font-size:1.15rem; display:block; }
 
+  /* theme picker */
+  .themebtns { display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.4rem; }
+  .themebtn { width:40px; height:40px; border-radius:12px; cursor:pointer; border:2px solid transparent;
+              transition:transform .18s, box-shadow .18s; display:block; }
+  .themebtn:hover { transform:scale(1.12) rotate(6deg); }
+  .themebtn.on { border-color:#fff; box-shadow:0 0 0 3px #6d8dff55; }
+
+  /* modal */
+  .modal-bg { position:fixed; inset:0; background:rgba(6,10,22,.72); backdrop-filter:blur(7px);
+              display:none; align-items:center; justify-content:center; z-index:50; padding:1rem; }
+  .modal-bg.show { display:flex; }
+  .modal { width:100%; max-width:520px; background:linear-gradient(160deg,#161c2e,#10141f);
+           border:1px solid var(--stroke); border-radius:22px; padding:1.6rem;
+           box-shadow:0 30px 80px -20px #000; animation:pop .3s ease-out both; max-height:92vh; overflow:auto; }
+  .modal h3 { font-size:1.15rem; margin-bottom:.9rem; }
+  .modal .row { display:flex; gap:.5rem; align-items:center; margin-bottom:.5rem; flex-wrap:wrap; }
+  .modal label { font-size:.85rem; color:var(--dim); display:block; margin:.9rem 0 .35rem; font-weight:600; }
+  .modal input { width:100%; }
+  .modal .close { position:absolute; }
+  .avatar-preview { width:84px; height:84px; border-radius:50%; object-fit:cover; border:3px solid #ffffff2e; }
+  .msg { font-size:.85rem; padding:.5rem .7rem; border-radius:10px; margin:.6rem 0; display:none; }
+  .msg.ok { display:block; background:#3ddc9722; color:var(--green); }
+  .msg.err { display:block; background:#ff6b6b22; color:var(--red); }
+  .danger { background:linear-gradient(135deg,#ff6b6b,#e03434) !important; box-shadow:0 8px 20px -10px #ff6b6b !important; }
+
   /* confetti */
   .confetti { position:fixed; top:-14px; width:10px; height:16px; z-index:999; pointer-events:none; animation:fall linear forwards; }
   @keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:.9; } }
@@ -150,7 +181,7 @@
     <div class="right">
       <span id="myAvatar"></span>
       <span id="who"></span>
-      <button class="secondary" onclick="changeAvatar()">🖼</button>
+      <button class="secondary" onclick="openSettings()">⚙ Settings</button>
       <button class="secondary" onclick="logout()">Log out</button>
     </div>
   </div>
@@ -215,6 +246,40 @@
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h3>⚙ Profile Settings</h3>
+
+    <label>Profile picture</label>
+    <div class="row">
+      <img id="setAvatarPreview" class="avatar-preview" alt="">
+      <button class="secondary" onclick="changeAvatar()">🖼 Change picture</button>
+    </div>
+
+    <label>Display name</label>
+    <input id="setUsername" placeholder="Your name">
+    <label>Password (confirm to save name)</label>
+    <input id="setNamePass" type="password" placeholder="Your password">
+    <button onclick="saveName()" style="margin-top:.5rem">Save name</button>
+
+    <label>Change password</label>
+    <input id="setCurPass" type="password" placeholder="Current password">
+    <input id="setNewPass" type="password" placeholder="New password (min 4)" style="margin-top:.4rem">
+    <button onclick="savePassword()" style="margin-top:.5rem">Update password</button>
+
+    <label>Theme color</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.2rem">Pick a color scheme for the whole app.</p>
+    <div class="themebtns" id="themeBtns"></div>
+
+    <label>Danger zone</label>
+    <button class="danger" onclick="deleteAccount()">🗑 Delete my account</button>
+
+    <div class="msg" id="setMsg"></div>
+    <button class="secondary" onclick="closeSettings()" style="margin-top:1rem;width:100%">Close</button>
+  </div>
+</div>
+
 <script>
 // Timetable (from your class schedule) — edit freely
 const TIMETABLE = {
@@ -273,6 +338,7 @@ async function init(){
   const ann = await api('/api/announcement');
   showAnnouncement(ann);
   rows = await api('/api/homework');
+  applyTheme(me.theme || 'ocean');
   renderToday(); renderHw(); renderMembers();
   localStorage.setItem('ht_session', '1');
   api('/api/ping', { method: 'POST' }).catch(() => {});
@@ -434,10 +500,14 @@ async function changeAvatar(){
   input.type = 'file'; input.accept = 'image/*';
   input.onchange = async () => {
     const file = input.files[0]; if (!file) return;
+    if (file.size > 1900000) return setMsg('err', 'Image too large — pick a smaller one (under ~1.5 MB).');
     const reader = new FileReader();
     reader.onload = async () => {
-      await api('/api/me', { method:'PATCH', body: JSON.stringify({ avatar: reader.result }) });
+      const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ avatar: reader.result }) });
+      if (r.error) return setMsg('err', r.error);
       me = await api('/api/me'); myAvatar.innerHTML = avatarImg(me.avatar, 32); renderMembers();
+      const pv = document.getElementById('setAvatarPreview'); if (pv) pv.src = me.avatar;
+      setMsg('ok', 'Picture updated ✅');
     };
     reader.readAsDataURL(file);
   };
@@ -452,6 +522,88 @@ async function postAnnouncement(){
   annInput.value = '';
   showAnnouncement(await api('/api/announcement'));
   loadHistory();
+}
+
+/* ---------- THEMES ---------- */
+const THEMES = {
+  ocean:   { a:'#6d8dff', b:'#ff7ac6' },
+  sunset:  { a:'#ff8a5c', b:'#ff5c9e' },
+  forest:  { a:'#4ade80', b:'#a3e635' },
+  grape:   { a:'#a78bfa', b:'#f472b6' },
+  aqua:    { a:'#22d3ee', b:'#818cf8' },
+  rose:    { a:'#fb7185', b:'#fda4af' }
+};
+let curTheme = 'ocean';
+function applyTheme(name){
+  const t = THEMES[name] || THEMES.ocean;
+  curTheme = name;
+  const r = document.documentElement.style;
+  r.setProperty('--blue', t.a);
+  r.setProperty('--pink', t.b);
+  r.setProperty('--grad', `linear-gradient(135deg, ${t.a}, ${t.b})`);
+  r.setProperty('--grad-soft', `linear-gradient(135deg, ${t.a}22, ${t.b}22)`);
+  r.setProperty('--gradbg', `radial-gradient(1100px 600px at 8% -8%, ${t.a}33, transparent 60%), radial-gradient(900px 520px at 96% 4%, ${t.b}33, transparent 60%), #0b0f1a`);
+  const g = document.getElementById('grad');
+  if (g) { g.children[0].setAttribute('stop-color', t.a); g.children[1].setAttribute('stop-color', t.b); }
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t.a);
+  renderThemeBtns();
+}
+function renderThemeBtns(){
+  const el = document.getElementById('themeBtns'); if (!el) return;
+  el.innerHTML = Object.entries(THEMES).map(([k,v])=>
+    `<div class="themebtn ${k===curTheme?'on':''}" data-k="${k}" title="${k}"
+      style="background:linear-gradient(135deg, ${v.a}, ${v.b})"
+      onclick="pickTheme('${k}')"></div>`).join('');
+}
+async function pickTheme(k){
+  applyTheme(k);
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ theme: k }) });
+  if (r.error) return setMsg('err', r.error);
+  me.theme = k; setMsg('ok', 'Theme saved ✅');
+}
+
+/* ---------- SETTINGS ---------- */
+function setMsg(kind, txt){
+  const m = document.getElementById('setMsg'); if (!m) return;
+  m.className = 'msg ' + kind; m.textContent = txt;
+  clearTimeout(window._msgT); window._msgT = setTimeout(()=>{ m.className='msg'; }, 3500);
+}
+function openSettings(){
+  document.getElementById('setUsername').value = me.username;
+  const pv = document.getElementById('setAvatarPreview');
+  pv.src = me.avatar || '';
+  pv.style.display = me.avatar ? 'block' : 'none';
+  ['setNamePass','setCurPass','setNewPass'].forEach(id=>document.getElementById(id).value='');
+  applyTheme(me.theme || 'ocean');
+  document.getElementById('setMsg').className = 'msg';
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeSettings(); });
+
+async function saveName(){
+  const u = document.getElementById('setUsername').value.trim();
+  const p = document.getElementById('setNamePass').value;
+  const r = await api('/api/me/name', { method:'PATCH', body: JSON.stringify({ username: u, password: p }) });
+  if (r.error) return setMsg('err', r.error);
+  me = await api('/api/me'); who.textContent = me.username; renderMembers();
+  document.getElementById('setNamePass').value = '';
+  setMsg('ok', 'Name updated ✅');
+}
+async function savePassword(){
+  const c = document.getElementById('setCurPass').value;
+  const n = document.getElementById('setNewPass').value;
+  const r = await api('/api/me/password', { method:'PATCH', body: JSON.stringify({ current: c, next: n }) });
+  if (r.error) return setMsg('err', r.error);
+  document.getElementById('setCurPass').value = '';
+  document.getElementById('setNewPass').value = '';
+  setMsg('ok', 'Password updated ✅');
+}
+async function deleteAccount(){
+  if (!confirm('Delete your account permanently? This cannot be undone.')) return;
+  const r = await api('/api/me', { method:'DELETE' });
+  if (r.error) return setMsg('err', r.error);
+  localStorage.removeItem('ht_session'); alert('Account deleted. Bye!'); location.reload();
 }
 
 function showAnnouncement(ann){

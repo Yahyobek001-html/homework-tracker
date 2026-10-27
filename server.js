@@ -22,6 +22,7 @@ if (process.env.DATABASE_URL) {
       salt TEXT NOT NULL,
       role TEXT DEFAULT 'student',
       avatar TEXT DEFAULT '',
+      theme TEXT DEFAULT 'ocean',
       created_at TIMESTAMP DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS sessions (
@@ -70,6 +71,7 @@ if (process.env.DATABASE_URL) {
       salt TEXT NOT NULL,
       role TEXT DEFAULT 'student',
       avatar TEXT DEFAULT '',
+      theme TEXT DEFAULT 'ocean',
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT DEFAULT (datetime('now')));
@@ -186,14 +188,68 @@ app.post("/api/logout", async (req, res) => {
 app.get("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  res.json({ username: user.username, role: user.role, avatar: user.avatar || "" });
+  res.json({
+    username: user.username,
+    role: user.role,
+    avatar: user.avatar || "",
+    theme: user.theme || "ocean"
+  });
 });
 
 app.patch("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  const { avatar } = req.body || {};
-  await run("UPDATE users SET avatar = ? WHERE id = ?", [avatar || "", user.id]);
+  const { avatar, theme } = req.body || {};
+  if (typeof avatar === "string") {
+    if (avatar.length > 2500000) return res.status(400).json({ error: "Image too large (max ~1.8 MB)." });
+    await run("UPDATE users SET avatar = ? WHERE id = ?", [avatar, user.id]);
+  }
+  if (typeof theme === "string") {
+    await run("UPDATE users SET theme = ? WHERE id = ?", [theme, user.id]);
+  }
+  res.json({ ok: true });
+});
+
+// Change display name
+app.patch("/api/me/name", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const { username, password } = req.body || {};
+  const name = (username || "").trim();
+  if (name.length < 3) return res.status(400).json({ error: "New name must be at least 3 characters." });
+  if (hash(password || "", user.salt) !== user.password_hash)
+    return res.status(400).json({ error: "Wrong password." });
+  try {
+    await run("UPDATE users SET username = ? WHERE id = ?", [name, user.id]);
+    res.json({ ok: true, username: name });
+  } catch {
+    res.status(400).json({ error: "That name is already taken." });
+  }
+});
+
+// Change password
+app.patch("/api/me/password", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const { current, next } = req.body || {};
+  if (hash(current || "", user.salt) !== user.password_hash)
+    return res.status(400).json({ error: "Current password is wrong." });
+  if (!next || next.length < 4) return res.status(400).json({ error: "New password must be at least 4 characters." });
+  const salt = crypto.randomBytes(16).toString("hex");
+  await run("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?", [hash(next, salt), salt, user.id]);
+  res.json({ ok: true });
+});
+
+// Delete own account
+app.delete("/api/me", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  if (user.role === "owner") return res.status(400).json({ error: "The creator account can't be deleted." });
+  await run("DELETE FROM homework WHERE user_id = ?", [user.id]);
+  await run("DELETE FROM activity WHERE user_id = ?", [user.id]);
+  await run("DELETE FROM sessions WHERE user_id = ?", [user.id]);
+  await run("DELETE FROM users WHERE id = ?", [user.id]);
+  res.setHeader("Set-Cookie", "token=; HttpOnly; Path=/; Max-Age=0");
   res.json({ ok: true });
 });
 
