@@ -3,79 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Homework Tracker</title>
+<title>📚 Homework Tracker</title>
+<meta name="theme-color" content="#0b0f1a">
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
-  body { background:#0d1117; color:#e6edf3; min-height:100vh; padding:2rem; }
-  h1 { font-size:2rem; margin-bottom:1rem; }
-  h2 { margin:1.5rem 0 .5rem; color:#58a6ff; }
-  button { background:#1f6feb; color:#fff; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; }
-  button.secondary { background:#30363d; }
-  button.add { background:#238636; margin-top:.75rem; }
-  button.del { background:none; color:#f85149; font-size:1rem; padding:.2rem .5rem; }
-  button.mini { background:#238636; padding:.25rem .6rem; font-size:.8rem; margin-left:.5rem; }
-  input { background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:.5rem; }
-  .card { max-width:420px; margin:4rem auto; background:#161b22; padding:2rem; border-radius:12px; border:1px solid #30363d; }
-  .card input { width:100%; margin-bottom:.75rem; }
-  .error { color:#f85149; margin-bottom:.75rem; display:none; }
-  table { width:100%; border-collapse:collapse; background:#161b22; border-radius:10px; overflow:hidden; }
-  th,td { border:1px solid #30363d; padding:.6rem .8rem; text-align:left; }
-  th { background:#21262d; }
-  td input[type=text],td input[type=date] { border:none; background:transparent; width:100%; }
-  tr.done td { opacity:.5; text-decoration:line-through; }
-  tr.done td:nth-last-child(-n+2) { text-decoration:none; opacity:1; }
+  :root {
+    --bg: #0b0f1a;
+    --card: rgba(255,255,255,.055);
+    --stroke: rgba(255,255,255,.10);
+    --txt: #eef2ff;
+    --dim: #97a3c4;
+    --blue: #6d8dff;
+    --pink: #ff7ac6;
+    --green: #3ddc97;
+    --gold: #ffcc5c;
+    --red: #ff6b6b;
+    --shadow: 0 18px 44px -18px rgba(0,0,0,.85);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
+  html { scroll-behavior:smooth; }
+  body {
+    color:var(--txt); min-height:100vh; padding:1.4rem;
+    background:
+      radial-gradient(1100px 600px at 8% -8%, #2b3d8f66, transparent 60%),
+      radial-gradient(900px 520px at 96% 4%, #8f2b6d55, transparent 60%),
+      radial-gradient(700px 700px at 50% 108%, #2b8f6a44, transparent 62%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+  h1 { font-size:2rem; letter-spacing:-.5px; }
+  h2 { font-size:1.35rem; margin:1.2rem 0 .6rem;
+       background:linear-gradient(90deg,var(--blue),var(--pink));
+       -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-.3px; }
+  button { border:none; padding:.55rem 1.1rem; border-radius:12px; cursor:pointer; color:#fff; font-weight:600;
+           background:linear-gradient(135deg,#6d8dff,#4a6cf7); transition:transform .16s, box-shadow .16s, filter .16s;
+           box-shadow:0 8px 20px -10px #4a6cf7; }
+  button:hover { transform:translateY(-2px); filter:brightness(1.08); }
+  button:active { transform:translateY(0) scale(.98); }
+  button.secondary { background:rgba(255,255,255,.08); box-shadow:none; border:1px solid var(--stroke); }
+  button.add { background:linear-gradient(135deg,#3ddc97,#1fa87a); box-shadow:0 8px 20px -10px #3ddc97; }
+  button.del { background:transparent; color:var(--red); box-shadow:none; font-size:1rem; padding:.3rem .55rem; }
+  button.del:hover { background:#ff6b6b1f; }
+  button.mini { background:rgba(61,220,151,.16); color:var(--green); box-shadow:none; border:1px solid #3ddc9733; font-size:.78rem; padding:.3rem .7rem; }
+  input { background:rgba(255,255,255,.06); color:var(--txt); border:1px solid var(--stroke); border-radius:12px; padding:.7rem .9rem;
+          outline:none; transition:border-color .16s, box-shadow .16s; }
+  input:focus { border-color:var(--blue); box-shadow:0 0 0 3px #6d8dff33; }
+
+  #auth { max-width:420px; margin:7vh auto; padding:2.2rem;
+          background:var(--card); backdrop-filter:blur(18px); border:1px solid var(--stroke); border-radius:22px; box-shadow:var(--shadow); }
+  #auth input { width:100%; margin-bottom:.7rem; }
+  #auth h1 { margin-bottom:.4rem; }
+  #auth .sub { color:var(--dim); font-size:.9rem; margin-bottom:1.2rem; }
+  .error { color:var(--red); margin-bottom:.7rem; display:none; font-size:.9rem; }
+
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.1rem; flex-wrap:wrap; gap:.7rem;
+            background:var(--card); backdrop-filter:blur(18px); border:1px solid var(--stroke); border-radius:18px; padding:.8rem 1rem; box-shadow:var(--shadow); }
+  .topbar .left { display:flex; align-items:center; gap:.7rem; }
+  .topbar h1 { font-size:1.5rem; }
+  .topbar .right { display:flex; align-items:center; gap:.6rem; }
+  .topbar img.avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #ffffff26; }
+  #who { color:var(--dim); font-weight:600; }
+
+  .badge { background:linear-gradient(135deg,#ffcc5c,#ff9f43); color:#3a2a00; border-radius:999px; padding:.2rem .7rem;
+           font-size:.76rem; font-weight:800; box-shadow:0 6px 16px -8px #ffcc5c; letter-spacing:.4px; }
+  .stats { color:var(--dim); margin-bottom:.9rem; font-size:.92rem; }
+
+  .panel { background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:.85rem 1rem; margin-bottom:.9rem; backdrop-filter:blur(10px); }
+  #announcementBox { border:1px solid #ffcc5c55; background:linear-gradient(135deg,#ffcc5c14,#ff9f4310); }
+  #announcementBox #annText b { color:var(--gold); }
+  #ownerPanel { border:1px dashed #6d8dff55; }
+
+  .tabs { display:flex; gap:.45rem; margin-bottom:1rem; flex-wrap:wrap;
+          background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:.4rem; backdrop-filter:blur(10px); width:fit-content; }
+  .tabs button { background:transparent; box-shadow:none; font-size:.9rem; padding:.5rem .95rem; }
+  .tabs button:not(.active) { color:var(--dim); }
+  .tabs button.active { background:linear-gradient(135deg,#6d8dff,#8f6dff); box-shadow:0 8px 20px -12px #6d8dff; color:#fff; }
+
+  .period { background:var(--card); border:1px solid var(--stroke); border-left:5px solid var(--blue); border-radius:14px;
+            padding:.85rem 1rem; margin-bottom:.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.6rem;
+            transition:transform .18s, background .18s, border-color .18s; backdrop-filter:blur(8px); }
+  .period:hover { transform:translateX(4px); background:rgba(255,255,255,.085); }
+  .period b { color:#fff; font-size:1rem; }
+  .period small { color:var(--dim); }
+  .period .pend { color:var(--gold); }
+  .period .pnum { display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px; border-radius:9px;
+                  background:rgba(109,141,255,.18); color:var(--blue); font-weight:800; font-size:.78rem; margin-right:.45rem; }
+
+  .member { display:flex; justify-content:space-between; align-items:center; background:var(--card); border:1px solid var(--stroke);
+            border-radius:14px; padding:.8rem 1rem; margin-bottom:.55rem; backdrop-filter:blur(8px); transition:transform .18s; }
+  .member:hover { transform:translateX(4px); }
+  .bar { background:rgba(255,255,255,.10); border-radius:999px; height:8px; width:130px; display:inline-block; vertical-align:middle; margin:0 .5rem; overflow:hidden; }
+  .bar > div { background:linear-gradient(90deg,#3ddc97,#6d8dff); height:100%; border-radius:999px; transition:width .5s; }
+
+  table { width:100%; border-collapse:separate; border-spacing:0; background:var(--card); border:1px solid var(--stroke);
+          border-radius:16px; overflow:hidden; backdrop-filter:blur(10px); box-shadow:var(--shadow); }
+  th,td { border-bottom:1px solid var(--stroke); padding:.7rem .8rem; text-align:left; }
+  th { background:rgba(255,255,255,.06); font-size:.82rem; text-transform:uppercase; letter-spacing:.6px; color:var(--dim); }
+  tbody tr { transition:background .15s; }
+  tbody tr:hover { background:rgba(255,255,255,.045); }
+  tr:last-child td { border-bottom:none; }
+  td input[type=text], td input[type=date] { border:none; background:transparent; width:100%; padding:.25rem 0; }
+  td input[type=date] { color-scheme:dark; }
+  td input[type=checkbox] { width:19px; height:19px; cursor:pointer; accent-color:#3ddc97; }
+  tr.done td { opacity:.45; }
+  tr.done td:nth-child(1) input[type=text], tr.done td:nth-child(2) input[type=text] { text-decoration:line-through; }
+  tr.done td:nth-last-child(-n+2) { opacity:1; }
+
   #app { display:none; }
-  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:.5rem; }
-  .badge { background:#f0b429; color:#000; border-radius:999px; padding:.15rem .6rem; font-size:.8rem; font-weight:700; margin-left:.5rem; }
-  .stats { color:#8b949e; margin-bottom:1rem; }
-  .tabs { display:flex; gap:.5rem; margin-bottom:1rem; }
-  .tabs button.active { background:#1f6feb; border:1px solid #1f6feb; }
-  .tabs button:not(.active) { background:#161b22; border:1px solid #30363d; }
-  .period { background:#161b22; border:1px solid #30363d; border-left:4px solid #1f6feb; border-radius:8px; padding:.75rem 1rem; margin-bottom:.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem; }
-  .period b { color:#58a6ff; }
-  .member { display:flex; justify-content:space-between; background:#161b22; border:1px solid #30363d; border-radius:8px; padding:.75rem 1rem; margin-bottom:.5rem; }
-  .bar { background:#30363d; border-radius:999px; height:8px; width:140px; display:inline-block; vertical-align:middle; margin:0 .5rem; overflow:hidden; }
-  .bar > div { background:#238636; height:100%; }
+  .section-title { display:flex; align-items:center; gap:.5rem; }
+
+  /* progress ring */
+  .ringwrap { display:flex; align-items:center; gap:.9rem; margin:.4rem 0 1rem; }
+  .ring { transform:rotate(-90deg); }
+  .ring .bgc { stroke:rgba(255,255,255,.10); }
+  .ring .fgc { stroke:url(#grad); stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.4,1,.3,1); }
+  .ringtxt { font-size:.92rem; color:var(--dim); }
+  .ringtxt b { color:var(--txt); font-size:1.15rem; display:block; }
+
+  /* confetti */
+  .confetti { position:fixed; top:-14px; width:10px; height:16px; z-index:999; pointer-events:none; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:.9; } }
+  @keyframes pop { 0%{transform:scale(.6);opacity:0} 60%{transform:scale(1.06)} 100%{transform:scale(1);opacity:1} }
+  .anim-in { animation:pop .32s ease-out both; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:99px; }
 </style>
 </head>
 <body>
 
-<div id="auth" class="card">
+<div id="auth" class="anim-in">
   <h1>📚 Homework Tracker</h1>
+  <p class="sub">7-01 · Track your homework, tick it off, stay ahead.</p>
   <p class="error" id="err"></p>
-  <input id="u" placeholder="Username">
-  <input id="p" type="password" placeholder="Password">
-  <div style="display:flex;gap:.5rem">
+  <input id="u" placeholder="Username" autocomplete="username">
+  <input id="p" type="password" placeholder="Password" autocomplete="current-password">
+  <div style="display:flex;gap:.5rem;margin-top:.3rem">
     <button onclick="login()">Sign In</button>
     <button class="secondary" onclick="register()">Register</button>
   </div>
 </div>
 
 <div id="app">
-  <div class="topbar">
-    <h1>📚 Homework Tracker <span id="roleBadge"></span></h1>
-    <div style="display:flex;align-items:center;gap:.75rem">
+  <div class="topbar anim-in">
+    <div class="left">
+      <h1>📚 Homework Tracker</h1> <span id="roleBadge"></span>
+    </div>
+    <div class="right">
       <span id="myAvatar"></span>
-      <span id="who" style="color:#8b949e"></span>
-      <button class="secondary" onclick="changeAvatar()">🖼 Change Picture</button>
+      <span id="who"></span>
+      <button class="secondary" onclick="changeAvatar()">🖼</button>
       <button class="secondary" onclick="logout()">Log out</button>
     </div>
   </div>
 
-  <div id="announcementBox" style="display:none;background:#1f2937;border:1px solid #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">
+  <div id="announcementBox" class="panel anim-in" style="display:none">
     <span id="annText"></span>
-    <span id="annMeta" style="color:#8b949e;font-size:.85rem;margin-left:.5rem"></span>
-    <button id="annClearBtn" onclick="clearAnnouncement()" style="background:#f85149;padding:.25rem .7rem;font-size:.85rem;float:right">🗑 Remove</button>
+    <span id="annMeta" style="color:var(--dim);font-size:.85rem;margin-left:.5rem"></span>
+    <button id="annClearBtn" onclick="clearAnnouncement()" style="background:var(--red);padding:.28rem .7rem;font-size:.85rem;float:right">🗑</button>
     <div style="clear:both"></div>
   </div>
-  <div id="ownerPanel" style="display:none;background:#161b22;border:1px dashed #f0b429;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">
+
+  <div id="ownerPanel" class="panel" style="display:none">
     <b>🛠 Creator Panel</b> — post an announcement to everyone:
-    <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem;">
+    <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem">
     <button onclick="postAnnouncement()">Post</button>
-    <button onclick="toggleHistory()" class="secondary" style="background:#30363d">📜 History</button>
-    <button onclick="toggleActivity()" class="secondary" style="background:#30363d">🌐 Live Activity</button>
-    <div id="annHistory" style="display:none;margin-top:.75rem;border-top:1px dashed #30363d;padding-top:.5rem"></div>
-    <div id="activityBox" style="display:none;margin-top:.75rem;border-top:1px dashed #30363d;padding-top:.5rem"></div>
+    <button onclick="toggleHistory()" class="secondary">📜 History</button>
+    <button onclick="toggleActivity()" class="secondary">🌐 Live Activity</button>
+    <div id="annHistory" style="display:none;margin-top:.75rem;border-top:1px dashed var(--stroke);padding-top:.5rem"></div>
+    <div id="activityBox" style="display:none;margin-top:.75rem;border-top:1px dashed var(--stroke);padding-top:.5rem"></div>
   </div>
 
   <div class="tabs">
@@ -101,13 +195,13 @@
 
   <div id="viewClass" style="display:none">
     <h2>🏫 Class 7-01 — Abu Ali Ibn Sino</h2>
-    <p class="stats" id="classStats"></p>
+    <div id="classStats" class="stats"></div>
     <div id="classList"></div>
   </div>
 
   <div id="viewHw" style="display:none">
     <h2>Academic Year 2026-27</h2>
-    <p class="stats" id="stats"></p>
+    <div class="ringwrap" id="ringWrap"></div>
     <table>
       <thead><tr><th>Subject</th><th>Homework</th><th>Date Given</th><th>Due</th><th>Done ✓</th><th></th></tr></thead>
       <tbody id="rows"></tbody>
@@ -269,13 +363,24 @@ const CLASS = [
 function renderClassInfo(){
   const boys = CLASS.filter(s=>s.g==='m').length;
   const girls = CLASS.length - boys;
-  classStats.textContent = `12 students — ${boys} boys 👦 · ${girls} girls 👧`;
+  const creators = CLASS.filter(s=>s.creator).length;
+  const chip = (bg, txt, sub) => `<div class="period" style="border-left-color:${bg};align-items:flex-start">
+      <div><b style="font-size:1.4rem;color:${bg}">${txt}</b><br><small>${sub}</small></div></div>`;
+  classStats.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem">
+    ${chip('#6d8dff', CLASS.length, 'Total students')}
+    ${chip('#58a6ff', boys, 'Boys 👦')}
+    ${chip('#ff7ac6', girls, 'Girls 👧')}
+    ${chip('#ffcc5c', creators, 'Creator 🛠')}
+  </div>`;
   classList.innerHTML = CLASS.map((s,i)=>`
-    <div class="period" style="border-left-color:${s.g==='m'?'#58a6ff':'#f778ba'}">
-      <div>
-        <b>${s.g==='m'?'👦':'👧'} ${esc(s.n)}</b>
-        ${s.creator?'<span class="badge" style="background:#f0b429;color:#000;border-radius:999px;padding:.15rem .6rem;font-size:.8rem;font-weight:700;margin-left:.5rem">🛠 CREATOR</span>':''}
-        <br><small style="color:#8b949e">${s.g==='m'?'Boy':'Girl'} · No. ${i+1}</small>
+    <div class="period anim-in" style="border-left-color:${s.g==='m'?'#58a6ff':'#ff7ac6'};animation-delay:${i*25}ms">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span style="width:38px;height:38px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:1.25rem;background:${s.g==='m'?'#58a6ff22':'#ff7ac622'}">${s.g==='m'?'👦':'👧'}</span>
+        <div>
+          <b>${esc(s.n)}</b>
+          ${s.creator?'<span class="badge" style="margin-left:.5rem">🛠 CREATOR</span>':''}
+          <br><small style="color:var(--dim)">${s.g==='m'?'Boy':'Girl'} · No. ${i+1}</small>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -292,7 +397,21 @@ async function quickAdd(subj){
 function renderHw(){
   const list = rows.filter(r=>r.year==='2026-27');
   const done = list.filter(r=>r.done).length;
-  stats.textContent = `${done}/${list.length} done` + (me?.role==='owner' ? ` — total across all years: ${rows.filter(r=>r.done).length}/${rows.length}` : '');
+  const total = list.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const R = 34, C = 2*Math.PI*R, off = C - (pct/100)*C;
+  const color = pct===100 ? 'var(--green)' : pct>=50 ? 'var(--blue)' : 'var(--pink)';
+  document.getElementById('ringWrap').innerHTML = `
+    <svg class="ring" width="86" height="86" viewBox="0 0 86 86">
+      <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${pct===100?'#3ddc97':'#6d8dff'}"/>
+        <stop offset="100%" stop-color="${pct===100?'#3ddc97':'#ff7ac6'}"/>
+      </linearGradient></defs>
+      <circle class="bgc" cx="43" cy="43" r="${R}" fill="none" stroke-width="9"/>
+      <circle class="fgc" cx="43" cy="43" r="${R}" fill="none" stroke-width="9"
+        stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
+    </svg>
+    <div class="ringtxt"><b>${pct}%</b>${done}/${total} done${me?.role==='owner'?` · all time ${rows.filter(r=>r.done).length}/${rows.length}`:''}</div>`;
   document.getElementById('rows').innerHTML = list.map(r=>`
     <tr class="${r.done?'done':''}">
       <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="Math"></td>
@@ -399,7 +518,29 @@ if (localStorage.getItem('ht_session')) { setInterval(()=>api('/api/ping',{metho
 setInterval(()=>{ if (me && me.role==='owner' && activityBox && activityBox.style.display !== 'none') loadActivity(); }, 10000);
 
 async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({[key]:val})}); rows.find(r=>r.id===id)[key]=val; renderToday(); }
-async function toggleDone(id,checked){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})}); rows.find(r=>r.id===id).done=checked; renderHw(); renderToday(); }
+async function toggleDone(id,checked){
+  await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})});
+  rows.find(r=>r.id===id).done=checked;
+  renderHw(); renderToday();
+  const list = rows.filter(r=>r.year==='2026-27');
+  if (checked && list.length && list.every(r=>r.done)) confetti();
+}
+
+function confetti(){
+  const colors = ['#6d8dff','#ff7ac6','#3ddc97','#ffcc5c','#8f6dff','#ffffff'];
+  for (let i=0;i<130;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.borderRadius = Math.random()>.5 ? '50%' : '2px';
+    c.style.animationDuration = (2.2 + Math.random()*2) + 's';
+    c.style.animationDelay = (Math.random()*.5) + 's';
+    c.style.opacity = .6 + Math.random()*.4;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 5000);
+  }
+}
 async function addRow(){ await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27'})}); rows = await api('/api/homework'); renderHw(); }
 async function delRow(id){ await api('/api/homework/'+id,{method:'DELETE'}); rows = rows.filter(r=>r.id!==id); renderHw(); renderToday(); }
 
