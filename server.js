@@ -337,6 +337,15 @@ app.post("/api/homework", async (req, res) => {
   res.json({ id: info.lastInsertRowid });
 });
 
+app.post("/api/homework/done-all", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const year = (req.body || {}).year || "2026-27";
+  await run("UPDATE homework SET done = 1 WHERE user_id = ? AND year = ? AND done = 0", [user.id, year]);
+  await track(user.id, "completed all homework");
+  res.json({ ok: true });
+});
+
 app.patch("/api/homework/:id", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });

@@ -131,6 +131,34 @@
   .ringtxt { font-size:.92rem; color:var(--dim); }
   .ringtxt b { color:var(--txt); font-size:1.15rem; display:block; }
 
+  /* homework toolbar / stats */
+  .statgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.55rem; margin:.6rem 0; }
+  .statcard { background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:.55rem .8rem; }
+  .statcard b { display:block; font-size:1.35rem; line-height:1.15; }
+  .statcard small { color:var(--dim); font-size:.76rem; }
+  .statcard.done b { color:var(--green); }
+  .statcard.pending b { color:var(--gold); }
+  .statcard.overdue b { color:var(--red); }
+  .statcard.today b { color:var(--blue); }
+  .hwbar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.4rem 0 .8rem; }
+  .hwbar input { flex:1; min-width:180px; }
+  .duebadge { display:inline-block; margin-left:.35rem; padding:.08rem .45rem; border-radius:999px;
+              font-size:.68rem; font-weight:800; letter-spacing:.2px; vertical-align:middle; white-space:nowrap; }
+  .duebadge.late { background:#ff6b6b28; color:#ff8f8f; }
+  .duebadge.today { background:#ffcc5c26; color:var(--gold); }
+  .duebadge.soon { background:#6d8dff22; color:#a3b6ff; }
+  .achbox { display:flex; gap:.45rem; flex-wrap:wrap; align-items:center; margin:.9rem 0 1rem; }
+  .achbox .achlabel { color:var(--dim); font-size:.85rem; font-weight:700; margin-right:.2rem; }
+  .ach { padding:.25rem .6rem; border-radius:999px; font-size:.76rem; font-weight:700;
+         background:rgba(255,255,255,.05); color:var(--dim); border:1px solid var(--stroke); opacity:.5; }
+  .ach.on { opacity:1; background:var(--grad-soft); color:var(--txt); border-color:transparent;
+            box-shadow:0 0 0 1px #ffffff22 inset; }
+  .upcoming { background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:.8rem 1rem; margin:.4rem 0 1rem; }
+  .upcoming h4 { font-size:.9rem; margin-bottom:.45rem; color:var(--txt); }
+  .upcoming .urow { display:flex; justify-content:space-between; gap:.6rem; padding:.3rem 0;
+                    border-bottom:1px dashed #ffffff12; font-size:.86rem; }
+  .upcoming .urow:last-child { border-bottom:none; }
+
   /* language */
   select.langsel { background:rgba(255,255,255,.06); color:var(--txt); border:1px solid var(--stroke);
                    border-radius:10px; padding:.45rem .6rem; font-weight:600; font-family:inherit;
@@ -235,6 +263,7 @@
   <div id="viewToday">
     <h2 id="todayTitle"></h2>
     <p class="stats" data-i18n="today.stats">Your timetable for today — click “+ Homework” next to a subject to quickly add homework.</p>
+    <div id="upcomingBox"></div>
     <div id="todayList"></div>
   </div>
 
@@ -254,6 +283,23 @@
   <div id="viewHw" style="display:none">
     <h2 data-i18n="hw.year">Academic Year 2026-27</h2>
     <div class="ringwrap" id="ringWrap"></div>
+    <div class="statgrid" id="hwStats"></div>
+    <div class="hwbar">
+      <input id="hwSearch" data-i18n-ph="hw.search" placeholder="🔍 Search homework…" oninput="setHwFilter({q:this.value})">
+      <select id="hwStatus" class="langsel" onchange="setHwFilter({f:this.value})">
+        <option value="all" data-i18n="hw.filter.all">All</option>
+        <option value="pending" data-i18n="hw.filter.pending">Pending</option>
+        <option value="done" data-i18n="hw.filter.done">Done</option>
+        <option value="overdue" data-i18n="hw.filter.overdue">Overdue</option>
+      </select>
+      <select id="hwSort" class="langsel" onchange="setHwFilter({s:this.value})">
+        <option value="due" data-i18n="hw.sort.due">By due date</option>
+        <option value="subject" data-i18n="hw.sort.subject">By subject</option>
+        <option value="new" data-i18n="hw.sort.new">Newest first</option>
+      </select>
+      <button class="secondary" onclick="markAllDone()" data-i18n="hw.markAll">✓ Mark all done</button>
+      <button class="secondary" onclick="exportCsv()" data-i18n="hw.export">⬇ Export CSV</button>
+    </div>
     <table>
       <thead><tr>
         <th data-i18n="th.subject">Subject</th>
@@ -265,6 +311,8 @@
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
+    <div id="hwEmpty" class="stats" style="display:none;text-align:center;padding:1rem" data-i18n="hw.empty">No homework matches your filters.</div>
+    <div id="achBox" class="achbox"></div>
     <button class="add" onclick="addRow()" data-i18n="hw.add">+ Add Homework</button>
   </div>
 
@@ -491,6 +539,7 @@ function renderToday(){
           </div>
         </div>`;
       }).join('');
+  renderUpcoming();
 }
 
 function renderTomorrow(){
@@ -569,13 +618,63 @@ async function quickAdd(subj){
   renderToday(); renderHw(); if (currentTab==='tomorrow') renderTomorrow();
 }
 
+let hwQuery = '', hwFilter = 'all', hwSort = 'due';
+
+function isoToday(){ return new Date().toISOString().slice(0,10); }
+function daysUntil(dateStr){
+  const a = new Date(dateStr + 'T00:00:00');
+  const b = new Date(isoToday() + 'T00:00:00');
+  return Math.round((a - b) / 86400000);
+}
+function dueBadge(r){
+  if (!r.due || r.done) return '';
+  const d = daysUntil(r.due);
+  if (d < 0) return `<span class="duebadge late">${t('badge.overdue')}</span>`;
+  if (d === 0) return `<span class="duebadge today">${t('badge.today')}</span>`;
+  if (d === 1) return `<span class="duebadge soon">${t('badge.tomorrow')}</span>`;
+  if (d <= 7) return `<span class="duebadge soon">${t('badge.inDays',{n:d})}</span>`;
+  return '';
+}
+function setHwFilter(o){
+  if (o.q != null) hwQuery = o.q;
+  if (o.f != null) hwFilter = o.f;
+  if (o.s != null) hwSort = o.s;
+  renderHw();
+}
+function visibleHw(){
+  const list = rows.filter(r=>r.year==='2026-27');
+  let out = list.slice();
+  const q = hwQuery.trim().toLowerCase();
+  if (q) out = out.filter(r => (r.subject||'').toLowerCase().includes(q) || (r.task||'').toLowerCase().includes(q));
+  if (hwFilter === 'pending') out = out.filter(r=>!r.done);
+  else if (hwFilter === 'done') out = out.filter(r=>r.done);
+  else if (hwFilter === 'overdue') out = out.filter(r=>!r.done && r.due && daysUntil(r.due) < 0);
+  if (hwSort === 'due') out.sort((a,b)=>(a.due||'9999-12-31').localeCompare(b.due||'9999-12-31'));
+  else if (hwSort === 'subject') out.sort((a,b)=>(a.subject||'').localeCompare(b.subject||''));
+  else out.sort((a,b)=> b.id - a.id);
+  return out;
+}
+
+function renderAch(){
+  const box = document.getElementById('achBox'); if (!box) return;
+  const list = rows.filter(r=>r.year==='2026-27');
+  const done = list.filter(r=>r.done).length;
+  const items = [
+    ['🥇','ach.first', done>=1],
+    ['🔥','ach.ten', done>=10],
+    ['💎','ach.fifty', done>=50],
+    ['🏆','ach.all', list.length>0 && done===list.length]
+  ];
+  box.innerHTML = `<span class="achlabel">${t('ach.title')}</span>` +
+    items.map(([ic,k,on])=>`<span class="ach ${on?'on':''}">${ic} ${t(k)}</span>`).join('');
+}
+
 function renderHw(){
   const list = rows.filter(r=>r.year==='2026-27');
   const done = list.filter(r=>r.done).length;
   const total = list.length;
   const pct = total ? Math.round(done/total*100) : 0;
   const R = 34, C = 2*Math.PI*R, off = C - (pct/100)*C;
-  const color = pct===100 ? 'var(--green)' : pct>=50 ? 'var(--blue)' : 'var(--pink)';
   document.getElementById('ringWrap').innerHTML = `
     <svg class="ring" width="86" height="86" viewBox="0 0 86 86">
       <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -587,15 +686,67 @@ function renderHw(){
         stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
     </svg>
     <div class="ringtxt"><b>${pct}%</b>${t('hw.done',{done,total})}${me?.role==='owner'?t('hw.alltime',{done:rows.filter(r=>r.done).length,total:rows.length}):''}</div>`;
-  document.getElementById('rows').innerHTML = list.map(r=>`
+
+  const today = isoToday();
+  const overdue = list.filter(r=>!r.done && r.due && daysUntil(r.due) < 0).length;
+  const dueToday = list.filter(r=>!r.done && r.due === today).length;
+  const statsEl = document.getElementById('hwStats');
+  if (statsEl) statsEl.innerHTML = `
+    <div class="statcard done"><b>${done}</b><small>${t('hw.stats.done')}</small></div>
+    <div class="statcard pending"><b>${total-done}</b><small>${t('hw.stats.pending')}</small></div>
+    <div class="statcard overdue"><b>${overdue}</b><small>${t('hw.stats.overdue')}</small></div>
+    <div class="statcard today"><b>${dueToday}</b><small>${t('hw.stats.today')}</small></div>`;
+
+  const shown = visibleHw();
+  document.getElementById('rows').innerHTML = shown.map(r=>`
     <tr class="${r.done?'done':''}">
       <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="${t('ph.subject')}"></td>
       <td><input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="${t('ph.task')}"></td>
       <td><input type="date" value="${r.given}" onchange="saveRow(${r.id},'given',this.value)"></td>
-      <td><input type="date" value="${r.due}" onchange="saveRow(${r.id},'due',this.value)"></td>
+      <td><input type="date" value="${r.due}" onchange="saveRow(${r.id},'due',this.value)">${dueBadge(r)}</td>
       <td style="text-align:center"><input type="checkbox" ${r.done?'checked':''} onchange="toggleDone(${r.id},this.checked)"></td>
       <td><button class="del" onclick="delRow(${r.id})">✕</button></td>
     </tr>`).join('');
+  const emptyEl = document.getElementById('hwEmpty');
+  if (emptyEl) emptyEl.style.display = shown.length ? 'none' : '';
+  renderAch();
+}
+
+async function markAllDone(){
+  if (!rows.some(r=>r.year==='2026-27' && !r.done)) return;
+  if (!confirm(t('confirm.markAll'))) return;
+  await api('/api/homework/done-all', { method:'POST', body: JSON.stringify({ year:'2026-27' }) });
+  rows = await api('/api/homework');
+  renderHw(); renderToday();
+  if (currentTab === 'tomorrow') renderTomorrow();
+  confetti();
+}
+
+function exportCsv(){
+  const list = rows.filter(r=>r.year==='2026-27');
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+  const head = [t('th.subject'), t('th.task'), t('th.given'), t('th.due'), t('th.done')];
+  const csv = [head.map(q).join(','),
+    ...list.map(r=>[r.subject, r.task, r.given, r.due, r.done ? '1' : '0'].map(q).join(','))].join('\r\n');
+  const blob = new Blob(["\uFEFF" + csv], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'homework-2026-27.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+}
+
+function renderUpcoming(){
+  const box = document.getElementById('upcomingBox');
+  if (!box) return;
+  const list = rows.filter(r=>!r.done && r.due && daysUntil(r.due) <= 7)
+    .sort((a,b)=>a.due.localeCompare(b.due)).slice(0,6);
+  if (!list.length) {
+    box.innerHTML = `<div class="upcoming"><h4>${t('upcoming.title')}</h4><div class="stats" style="margin:0">${t('upcoming.none')}</div></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="upcoming"><h4>${t('upcoming.title')}</h4>${list.map(r=>`
+    <div class="urow"><span>${esc(r.subject||'—')}${r.task?' · '+esc(r.task):''}</span><span>${esc(r.due)} ${dueBadge(r)}</span></div>`).join('')}</div>`;
 }
 function avatarImg(src, size){
   return src
