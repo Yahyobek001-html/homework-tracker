@@ -36,6 +36,17 @@
     background: var(--gradbg);
     background-attachment: fixed;
   }
+  /* light page background chosen by the user */
+  body.lightbg { --txt:#111827; --dim:#4b5563; --card:rgba(255,255,255,.75);
+                 --stroke:rgba(17,24,39,.15); color:#111827; }
+  body.lightbg input, body.lightbg textarea, body.lightbg select.langsel {
+    background:#ffffff; color:#111827; border-color:rgba(17,24,39,.18); }
+  body.lightbg th { background:rgba(17,24,39,.06); }
+  body.lightbg .period b { color:#0b1020; }
+  body.lightbg .modal { background:linear-gradient(160deg,#ffffff,#eef2fb); }
+  body.lightbg .modal-bg { background:rgba(15,23,42,.45); }
+  body.lightbg .ach { background:rgba(17,24,39,.05); }
+  body.lightbg .themebtn.on { border-color:#111827; }
   h1 { font-size:2rem; letter-spacing:-.5px; }
   h2 { font-size:1.35rem; margin:1.2rem 0 .6rem;
        background:linear-gradient(90deg,var(--blue),var(--pink));
@@ -176,6 +187,18 @@
   .themebtn:hover { transform:scale(1.12) rotate(6deg); }
   .themebtn.on { border-color:#fff; box-shadow:0 0 0 3px #6d8dff55; }
 
+  /* background / accent colour controls */
+  .colorbar { display:flex; gap:.45rem; align-items:center; flex-wrap:wrap; margin-top:.15rem; }
+  .colorbar input[type="color"] { width:52px; height:38px; padding:2px; border:1px solid var(--stroke);
+      border-radius:10px; background:rgba(255,255,255,.06); cursor:pointer; }
+  .colorbar button { padding:.45rem .85rem; font-size:.85rem; }
+  .swatches { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.45rem; }
+  .swatches .sw { width:30px; height:30px; border-radius:9px; cursor:pointer; border:2px solid transparent;
+      box-shadow:0 0 0 1px #ffffff22 inset; transition:transform .15s, border-color .15s; }
+  .swatches .sw:hover { transform:scale(1.14); }
+  .swatches .sw.on { border-color:#fff; }
+  .fsbtn.on { background:var(--grad); box-shadow:0 8px 20px -12px var(--blue); }
+
   /* modal */
   .modal-bg { position:fixed; inset:0; background:rgba(6,10,22,.72); backdrop-filter:blur(7px);
               display:none; align-items:center; justify-content:center; z-index:50; padding:1rem; }
@@ -299,6 +322,7 @@
       </select>
       <button class="secondary" onclick="markAllDone()" data-i18n="hw.markAll">✓ Mark all done</button>
       <button class="secondary" onclick="exportCsv()" data-i18n="hw.export">⬇ Export CSV</button>
+      <button class="secondary" onclick="clearDone()" data-i18n="hw.clearDone">🧹 Clear done</button>
     </div>
     <table>
       <thead><tr>
@@ -379,6 +403,35 @@
     <label data-i18n="settings.theme">Theme color</label>
     <p style="font-size:.82rem;color:var(--dim);margin-bottom:.2rem" data-i18n="settings.themeDesc">Pick a color scheme for the whole app.</p>
     <div class="themebtns" id="themeBtns"></div>
+
+    <label data-i18n="settings.bgcolor">Background color</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem" data-i18n="settings.bgcolorDesc">Pick a solid page color. A background image always wins over it.</p>
+    <div class="colorbar">
+      <input type="color" id="bgColorInput" value="#0b0f1a" oninput="previewBgColor(this.value)">
+      <button onclick="applyBgColor()" data-i18n="settings.apply">Apply</button>
+      <button class="secondary" onclick="resetBgColor()" data-i18n="settings.resetBgColor">↺ Theme default</button>
+    </div>
+    <div class="swatches" id="bgSwatches"></div>
+
+    <label data-i18n="settings.accent">Accent color</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem" data-i18n="settings.accentDesc">Recolours buttons, links and highlights across the site.</p>
+    <div class="colorbar">
+      <input type="color" id="accentInput" value="#6d8dff" oninput="previewAccent(this.value)">
+      <button onclick="applyAccent()" data-i18n="settings.apply">Apply</button>
+      <button class="secondary" onclick="resetAccent()" data-i18n="settings.resetAccent">↺ Theme default</button>
+    </div>
+    <div class="swatches" id="accentSwatches"></div>
+
+    <label data-i18n="settings.fontsize">Text size</label>
+    <div class="colorbar">
+      <button class="secondary fsbtn" data-fs="small" onclick="setFontSize('small')" data-i18n="settings.fsSmall">A Small</button>
+      <button class="secondary fsbtn" data-fs="normal" onclick="setFontSize('normal')" data-i18n="settings.fsNormal">A Normal</button>
+      <button class="secondary fsbtn" data-fs="large" onclick="setFontSize('large')" data-i18n="settings.fsLarge">A Large</button>
+    </div>
+
+    <label data-i18n="settings.reset">Reset appearance</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem" data-i18n="settings.resetDesc">Removes your background image, colours and text size.</p>
+    <button class="secondary" onclick="resetAppearance()" data-i18n="settings.resetAll">♻ Reset everything</button>
 
     <label data-i18n="settings.danger">Danger zone</label>
     <button class="danger" onclick="deleteAccount()" data-i18n="settings.delete">🗑 Delete my account</button>
@@ -494,7 +547,11 @@ async function init(){
   rows = await api('/api/homework');
   applyLang(lang, false);
   applyTheme(me.theme || 'ocean');
-  applyBackground(me.bg);
+  paintBackground();
+  let fs = 'normal';
+  try { fs = localStorage.getItem('ht_fontsize') || 'normal'; } catch {}
+  applyFontSize(fs, true);
+  renderSwatches();
   renderToday(); renderHw(); renderMembers();
   localStorage.setItem('ht_session', '1');
   api('/api/ping', { method: 'POST' }).catch(() => {});
@@ -722,6 +779,16 @@ async function markAllDone(){
   confetti();
 }
 
+async function clearDone(){
+  if (!rows.some(r=>r.year==='2026-27' && r.done)) return;
+  if (!confirm(t('confirm.clearDone'))) return;
+  await api('/api/homework/clear-done', { method:'POST', body: JSON.stringify({ year:'2026-27' }) });
+  rows = await api('/api/homework');
+  renderHw(); renderToday(); renderUpcoming();
+  if (currentTab === 'tomorrow') renderTomorrow();
+  setMsg('ok', t('msg.clearedDone'));
+}
+
 function exportCsv(){
   const list = rows.filter(r=>r.year==='2026-27');
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
@@ -797,16 +864,19 @@ let curTheme = 'ocean';
 function applyTheme(name){
   const t = THEMES[name] || THEMES.ocean;
   curTheme = name;
+  const a = (me && me.accent) ? me.accent : t.a;
   const r = document.documentElement.style;
-  r.setProperty('--blue', t.a);
+  r.setProperty('--blue', a);
   r.setProperty('--pink', t.b);
-  r.setProperty('--grad', `linear-gradient(135deg, ${t.a}, ${t.b})`);
-  r.setProperty('--grad-soft', `linear-gradient(135deg, ${t.a}22, ${t.b}22)`);
-  r.setProperty('--gradbg', `radial-gradient(1100px 600px at 8% -8%, ${t.a}33, transparent 60%), radial-gradient(900px 520px at 96% 4%, ${t.b}33, transparent 60%), #0b0f1a`);
+  r.setProperty('--grad', `linear-gradient(135deg, ${a}, ${t.b})`);
+  r.setProperty('--grad-soft', `linear-gradient(135deg, ${a}22, ${t.b}22)`);
+  r.setProperty('--gradbg', `radial-gradient(1100px 600px at 8% -8%, ${a}33, transparent 60%), radial-gradient(900px 520px at 96% 4%, ${t.b}33, transparent 60%), #0b0f1a`);
   const g = document.getElementById('grad');
-  if (g) { g.children[0].setAttribute('stop-color', t.a); g.children[1].setAttribute('stop-color', t.b); }
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', t.a);
+  if (g) { g.children[0].setAttribute('stop-color', a); g.children[1].setAttribute('stop-color', t.b); }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', a);
   renderThemeBtns();
+  renderSwatches();
 }
 function renderThemeBtns(){
   const el = document.getElementById('themeBtns'); if (!el) return;
@@ -822,16 +892,135 @@ async function pickTheme(k){
   me.theme = k; setMsg('ok', t('msg.theme'));
 }
 
-/* ---------- BACKGROUND ---------- */
-function applyBackground(bg){
-  if (bg) {
-    document.body.style.background =
-      `linear-gradient(rgba(7,10,20,.70), rgba(7,10,20,.88)), url("${bg}") center/cover no-repeat fixed`;
-    document.body.style.backgroundSize = 'cover';
+/* ---------- APPEARANCE (image / colour / accent / text size) ---------- */
+const BG_PRESETS = ['#0b0f1a', '#0f172a', '#111c2e', '#141026', '#1a0f24', '#0d1a16', '#1a1410', '#000000', '#f4f6fb', '#e8eefc'];
+const ACCENT_PRESETS = ['#6d8dff', '#58a6ff', '#3ddc97', '#ffcc5c', '#ff7ac6', '#f85149', '#a78bfa', '#22d3ee', '#fb7185', '#4ade80'];
+
+function hexLum(hex){
+  const h = String(hex).replace('#','');
+  if (h.length !== 6) return 0;
+  const c = [0,2,4].map(i => {
+    let v = parseInt(h.slice(i,i+2), 16) / 255;
+    return v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4);
+  });
+  return .2126*c[0] + .7152*c[1] + .0722*c[2];
+}
+
+function paintBackground(){
+  const b = document.body;
+  b.classList.remove('lightbg');
+  b.style.backgroundAttachment = '';
+  if (me && me.bg) {
+    b.style.background = `linear-gradient(rgba(7,10,20,.70), rgba(7,10,20,.88)), url("${me.bg}") center/cover no-repeat fixed`;
+    b.style.backgroundAttachment = 'fixed';
+  } else if (me && me.bgcolor) {
+    b.style.background = me.bgcolor;
+    b.style.backgroundAttachment = 'fixed';
+    if (hexLum(me.bgcolor) > .55) b.classList.add('lightbg');
   } else {
-    document.body.style.background = '';
+    b.style.background = '';
+  }
+  const pv = document.getElementById('bgPreview');
+  if (pv) {
+    pv.style.backgroundImage = me && me.bg ? `url("${me.bg}")` : 'none';
+    pv.style.backgroundColor = (!me || !me.bg) && me && me.bgcolor ? me.bgcolor : '';
   }
 }
+
+/* kept for older call sites */
+function applyBackground(){ paintBackground(); }
+
+function renderSwatches(){
+  const bgEl = document.getElementById('bgSwatches');
+  if (bgEl) bgEl.innerHTML = BG_PRESETS.map(c =>
+    `<div class="sw ${me && me.bgcolor === c ? 'on' : ''}" style="background:${c}" title="${c}" onclick="pickBgColor('${c}')"></div>`).join('');
+  const acEl = document.getElementById('accentSwatches');
+  const cur = (me && me.accent) || (THEMES[curTheme] || THEMES.ocean).a;
+  if (acEl) acEl.innerHTML = ACCENT_PRESETS.map(c =>
+    `<div class="sw ${String(cur).toLowerCase() === c ? 'on' : ''}" style="background:${c}" title="${c}" onclick="pickAccent('${c}')"></div>`).join('');
+}
+
+function previewBgColor(v){
+  const inp = document.getElementById('bgColorInput');
+  if (inp) inp.value = v;
+  const b = document.body;
+  b.style.background = v;
+  b.style.backgroundAttachment = 'fixed';
+  b.classList.toggle('lightbg', hexLum(v) > .55);
+}
+
+function pickBgColor(v){
+  const inp = document.getElementById('bgColorInput');
+  if (inp) inp.value = v;
+  return applyBgColor();
+}
+
+async function applyBgColor(){
+  const v = document.getElementById('bgColorInput').value;
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bgcolor: v }) });
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.bgcolor = v;
+  paintBackground(); renderSwatches();
+  setMsg('ok', t('msg.bgcolor'));
+}
+
+async function resetBgColor(){
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bgcolor: '' }) });
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.bgcolor = '';
+  paintBackground(); renderSwatches();
+  setMsg('ok', t('msg.bgcolorReset'));
+}
+
+function previewAccent(v){
+  const inp = document.getElementById('accentInput');
+  if (inp) inp.value = v;
+  document.documentElement.style.setProperty('--blue', v);
+}
+
+function pickAccent(v){
+  const inp = document.getElementById('accentInput');
+  if (inp) inp.value = v;
+  return applyAccent();
+}
+
+async function applyAccent(){
+  const v = document.getElementById('accentInput').value;
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ accent: v }) });
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.accent = v;
+  applyTheme(curTheme); renderSwatches();
+  setMsg('ok', t('msg.accent'));
+}
+
+async function resetAccent(){
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ accent: '' }) });
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.accent = '';
+  applyTheme(curTheme); renderSwatches();
+  setMsg('ok', t('msg.accentReset'));
+}
+
+function applyFontSize(size, quiet){
+  const map = { small:'92%', normal:'100%', large:'112%' };
+  const s = map[size] ? size : 'normal';
+  document.documentElement.style.fontSize = map[s];
+  try { localStorage.setItem('ht_fontsize', s); } catch {}
+  document.querySelectorAll('.fsbtn').forEach(b => b.classList.toggle('on', b.dataset.fs === s));
+  if (!quiet) setMsg('ok', t('msg.fontsize'));
+}
+function setFontSize(s){ applyFontSize(s); }
+
+async function resetAppearance(){
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg:'', bgcolor:'', accent:'', theme:'ocean' }) });
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.bg = ''; me.bgcolor = ''; me.accent = ''; me.theme = 'ocean';
+  applyTheme('ocean'); paintBackground(); renderSwatches(); applyFontSize('normal', true);
+  const bi = document.getElementById('bgColorInput'); if (bi) bi.value = '#0b0f1a';
+  const ai = document.getElementById('accentInput'); if (ai) ai.value = THEMES.ocean.a;
+  setMsg('ok', t('msg.resetAppearance'));
+}
+
 async function changeBackground(){
   const input = document.createElement('input');
   input.type = 'file'; input.accept = 'image/*';
@@ -843,9 +1032,7 @@ async function changeBackground(){
       const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: reader.result }) });
       if (r.error) return setMsg('err', trErr(r.error));
       me = await api('/api/me');
-      applyBackground(me.bg);
-      const pv = document.getElementById('bgPreview');
-      if (pv) pv.style.backgroundImage = `url("${me.bg}")`;
+      paintBackground(); renderSwatches();
       setMsg('ok', t('msg.bg'));
     };
     reader.readAsDataURL(file);
@@ -855,9 +1042,8 @@ async function changeBackground(){
 async function removeBackground(){
   const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: '' }) });
   if (r.error) return setMsg('err', trErr(r.error));
-  me = await api('/api/me'); applyBackground('');
-  const pv = document.getElementById('bgPreview');
-  if (pv) pv.style.backgroundImage = 'none';
+  me = await api('/api/me');
+  paintBackground(); renderSwatches();
   setMsg('ok', t('msg.bgremoved'));
 }
 async function saveBio(){
@@ -881,8 +1067,17 @@ function openSettings(){
   pv.style.display = me.avatar ? 'block' : 'none';
   const bp = document.getElementById('bgPreview');
   bp.style.backgroundImage = me.bg ? `url("${me.bg}")` : 'none';
+  bp.style.backgroundColor = (!me.bg && me.bgcolor) ? me.bgcolor : '';
+  const bi = document.getElementById('bgColorInput');
+  if (bi) bi.value = me.bgcolor || '#0b0f1a';
+  const ai = document.getElementById('accentInput');
+  if (ai) ai.value = me.accent || (THEMES[me.theme] || THEMES.ocean).a;
   ['setNamePass','setCurPass','setNewPass'].forEach(id=>document.getElementById(id).value='');
   applyTheme(me.theme || 'ocean');
+  renderSwatches();
+  let fs = 'normal';
+  try { fs = localStorage.getItem('ht_fontsize') || 'normal'; } catch {}
+  applyFontSize(fs, true);
   document.getElementById('setMsg').className = 'msg';
   document.getElementById('settingsModal').classList.add('show');
 }

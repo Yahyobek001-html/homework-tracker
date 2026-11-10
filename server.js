@@ -25,6 +25,8 @@ if (process.env.DATABASE_URL) {
       theme TEXT DEFAULT 'ocean',
       bio TEXT DEFAULT '',
       bg TEXT DEFAULT '',
+      bgcolor TEXT DEFAULT '',
+      accent TEXT DEFAULT '',
       lang TEXT DEFAULT 'uz',
       created_at TIMESTAMP DEFAULT now()
     );
@@ -65,6 +67,8 @@ if (process.env.DATABASE_URL) {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bg TEXT DEFAULT ''");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'ocean'");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'uz'");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bgcolor TEXT DEFAULT ''");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS accent TEXT DEFAULT ''");
 } else {
   const { DatabaseSync } = await import("node:sqlite");
   const fs = await import("node:fs");
@@ -82,6 +86,8 @@ if (process.env.DATABASE_URL) {
       theme TEXT DEFAULT 'ocean',
       bio TEXT DEFAULT '',
       bg TEXT DEFAULT '',
+      bgcolor TEXT DEFAULT '',
+      accent TEXT DEFAULT '',
       lang TEXT DEFAULT 'uz',
       created_at TEXT DEFAULT (datetime('now'))
     );
@@ -106,7 +112,7 @@ if (process.env.DATABASE_URL) {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
-  for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'", "lang TEXT DEFAULT 'uz'"]) {
+  for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'", "lang TEXT DEFAULT 'uz'", "bgcolor TEXT DEFAULT ''", "accent TEXT DEFAULT ''"]) {
     try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
   }
   q = (sql, p = []) => db.prepare(sql).all(...p);
@@ -210,6 +216,8 @@ app.get("/api/me", async (req, res) => {
     theme: user.theme || "ocean",
     bio: user.bio || "",
     bg: user.bg || "",
+    bgcolor: user.bgcolor || "",
+    accent: user.accent || "",
     lang: user.lang || "uz"
   });
 });
@@ -217,7 +225,8 @@ app.get("/api/me", async (req, res) => {
 app.patch("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  const { avatar, theme, bio, bg, lang } = req.body || {};
+  const { avatar, theme, bio, bg, bgcolor, accent, lang } = req.body || {};
+  const HEX = /^#[0-9a-f]{6}$/i;
   if (typeof avatar === "string") {
     if (avatar.length > 2600000) return res.status(400).json({ error: "Image too large (max ~1.8 MB)." });
     await run("UPDATE users SET avatar = ? WHERE id = ?", [avatar, user.id]);
@@ -228,6 +237,14 @@ app.patch("/api/me", async (req, res) => {
   }
   if (typeof theme === "string") {
     await run("UPDATE users SET theme = ? WHERE id = ?", [theme, user.id]);
+  }
+  if (typeof bgcolor === "string") {
+    if (bgcolor && !HEX.test(bgcolor)) return res.status(400).json({ error: "Invalid colour." });
+    await run("UPDATE users SET bgcolor = ? WHERE id = ?", [bgcolor, user.id]);
+  }
+  if (typeof accent === "string") {
+    if (accent && !HEX.test(accent)) return res.status(400).json({ error: "Invalid colour." });
+    await run("UPDATE users SET accent = ? WHERE id = ?", [accent, user.id]);
   }
   if (typeof bio === "string") {
     await run("UPDATE users SET bio = ? WHERE id = ?", [bio.slice(0, 160), user.id]);
@@ -343,6 +360,15 @@ app.post("/api/homework/done-all", async (req, res) => {
   const year = (req.body || {}).year || "2026-27";
   await run("UPDATE homework SET done = 1 WHERE user_id = ? AND year = ? AND done = 0", [user.id, year]);
   await track(user.id, "completed all homework");
+  res.json({ ok: true });
+});
+
+app.post("/api/homework/clear-done", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const year = (req.body || {}).year || "2026-27";
+  await run("DELETE FROM homework WHERE user_id = ? AND year = ? AND done = 1", [user.id, year]);
+  await track(user.id, "cleared completed homework");
   res.json({ ok: true });
 });
 
