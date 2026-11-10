@@ -200,6 +200,7 @@ app.get("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
   res.json({
+    id: user.id,
     username: user.username,
     role: user.role,
     avatar: user.avatar || "",
@@ -353,7 +354,6 @@ app.delete("/api/homework/:id", async (req, res) => {
 app.get("/api/members", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  if (user.role !== "owner") return res.status(403).json({ error: "Only the creator can see members." });
   const users = await q("SELECT id, username, role, avatar, bio FROM users ORDER BY id");
   res.json(users);
 });

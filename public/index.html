@@ -97,6 +97,12 @@
   .member { display:flex; justify-content:space-between; align-items:center; background:var(--card); border:1px solid var(--stroke);
             border-radius:14px; padding:.8rem 1rem; margin-bottom:.55rem; backdrop-filter:blur(8px); transition:transform .18s; }
   .member:hover { transform:translateX(4px); }
+  .member .who { display:flex; align-items:center; gap:.55rem; cursor:pointer; min-width:0; flex:1; }
+  .member .who b { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .member .bio { font-size:.8rem; color:var(--dim); margin-top:.15rem; max-width:46ch;
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .searchwrap { display:flex; gap:.7rem; align-items:center; margin:.4rem 0 1rem; }
+  .searchwrap input { flex:1; }
   .bar { background:rgba(255,255,255,.10); border-radius:999px; height:8px; width:130px; display:inline-block; vertical-align:middle; margin:0 .5rem; overflow:hidden; }
   .bar > div { background:linear-gradient(90deg,#3ddc97,#6d8dff); height:100%; border-radius:999px; transition:width .5s; }
 
@@ -241,8 +247,21 @@
   </div>
 
   <div id="viewMembers" style="display:none">
-    <h2>All Members</h2>
+    <h2>👥 Class 7-01 Members</h2>
+    <p class="stats">Everyone in the class. Click a member to see their profile.</p>
+    <div class="searchwrap">
+      <input id="memberSearch" placeholder="🔍 Search by name…" oninput="renderMembers()">
+      <span id="memberCount" class="stats" style="margin:0;white-space:nowrap"></span>
+    </div>
     <div id="memberList"></div>
+  </div>
+</div>
+
+<!-- MEMBER PROFILE MODAL -->
+<div class="modal-bg" id="profileModal" onclick="if(event.target===this)closeProfile()">
+  <div class="modal" style="max-width:460px;text-align:center">
+    <div id="profileBody"></div>
+    <button class="secondary" onclick="closeProfile()" style="margin-top:1rem;width:100%">Close</button>
   </div>
 </div>
 
@@ -350,7 +369,7 @@ async function init(){
   myAvatar.innerHTML = avatarImg(me.avatar, 32);
   roleBadge.innerHTML = me.role === 'owner' ? '<span class="badge">🛠 CREATOR</span>' : '';
   ownerPanel.style.display = me.role === 'owner' ? '' : 'none';
-  tabMembers.style.display = me.role === 'owner' ? '' : 'none';
+  tabMembers.style.display = '';
   const ann = await api('/api/announcement');
   showAnnouncement(ann);
   rows = await api('/api/homework');
@@ -766,20 +785,62 @@ function escHtml(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+let lastMembers = [];
+
 async function renderMembers(){
-  const m = await api('/api/members');
-  memberList.innerHTML = m.map(u=>`
+  lastMembers = await api('/api/members');
+  filterMembers();
+}
+
+function filterMembers(){
+  const term = (document.getElementById('memberSearch')?.value || '').trim().toLowerCase();
+  const list = lastMembers.filter(u =>
+    !term ||
+    u.username.toLowerCase().includes(term) ||
+    (u.bio || '').toLowerCase().includes(term)
+  );
+  const cnt = document.getElementById('memberCount');
+  if (cnt) cnt.textContent = list.length + ' / ' + lastMembers.length;
+  if (!list.length) {
+    memberList.innerHTML = '<p class="stats" style="text-align:center;padding:1.2rem">Hech kim topilmadi 🔍</p>';
+    return;
+  }
+  const isOwner = me?.role === 'owner';
+  memberList.innerHTML = list.map(u=>`
     <div class="member">
-      <div>
-        <div>${avatarImg(u.avatar, 28)} <b>${esc(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}</div>
-        ${u.bio ? `<div style="font-size:.82rem;color:var(--dim);margin:.25rem 0 0 36px">${escHtml(u.bio)}</div>` : ''}
+      <div class="who" onclick="openProfile(${u.id})">
+        ${avatarImg(u.avatar, 38)}
+        <div style="min-width:0">
+          <div><b>${escHtml(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}${u.id===me?.id?' <span style="font-size:.72rem;color:var(--blue)">(siz)</span>':''}</div>
+          <div class="bio">${u.bio ? escHtml(u.bio) : '<i>bio yo\'q</i>'}</div>
+        </div>
       </div>
-      <div>
-        ${u.role==='owner' ? '' : `<button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="viewMember(${u.id},'${esc(u.username)}')">👁 View</button>
-        <button class="del" onclick="deleteMember(${u.id},'${esc(u.username)}')">🗑 Delete</button>`}
+      <div style="display:flex;gap:.4rem;flex-shrink:0">
+        <button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="openProfile(${u.id})">👁 Profil</button>
+        ${isOwner && u.role!=='owner' && u.id!==me?.id
+          ? `<button class="del" onclick="deleteMember(${u.id},'${esc(u.username)}')">🗑</button>` : ''}
       </div>
     </div>`).join('');
 }
+
+function openProfile(id){
+  const u = lastMembers.find(x => x.id === id);
+  if (!u) return;
+  const isOwner = me?.role === 'owner';
+  document.getElementById('profileBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:.55rem">
+      <div style="font-size:2.6rem;line-height:1">${u.avatar ? avatarImg(u.avatar, 110) : '👤'}</div>
+      <div style="font-size:1.25rem;font-weight:800">${escHtml(u.username)}</div>
+      ${u.role==='owner'?'<span class="badge">🛠 CREATOR</span>':'<span class="badge" style="background:rgba(109,141,255,.18)">🎒 Student</span>'}
+      <div style="font-size:.92rem;color:var(--dim);max-width:38ch;line-height:1.55;margin-top:.3rem">
+        ${u.bio ? escHtml(u.bio) : 'Bu o\'quvchida bio yo\'q.'}
+      </div>
+      ${isOwner && u.role!=='owner'
+        ? `<button class="secondary" style="margin-top:.8rem" onclick="closeProfile();viewMember(${u.id},'${esc(u.username)}')">📚 Vazifalarini ko\'rish (faqat creator)</button>` : ''}
+    </div>`;
+  document.getElementById('profileModal').classList.add('show');
+}
+function closeProfile(){ document.getElementById('profileModal').classList.remove('show'); }
 
 async function deleteMember(id, name){
   if (!confirm(`Delete account "${name}" and all their homework?`)) return;
