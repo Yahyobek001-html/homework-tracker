@@ -131,6 +131,16 @@
   .ringtxt { font-size:.92rem; color:var(--dim); }
   .ringtxt b { color:var(--txt); font-size:1.15rem; display:block; }
 
+  /* language */
+  select.langsel { background:rgba(255,255,255,.06); color:var(--txt); border:1px solid var(--stroke);
+                   border-radius:10px; padding:.45rem .6rem; font-weight:600; font-family:inherit;
+                   cursor:pointer; outline:none; max-width:170px; }
+  select.langsel option { background:#161c2e; color:#eef2ff; }
+  .langrow { display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+             margin-top:1rem; color:var(--dim); font-size:.86rem; }
+  html[dir="rtl"] body { direction: rtl; }
+  html[dir="rtl"] .period { border-left:none; border-right:5px solid var(--blue); }
+
   /* theme picker */
   .themebtns { display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.4rem; }
   .themebtn { width:40px; height:40px; border-radius:12px; cursor:pointer; border:2px solid transparent;
@@ -168,27 +178,32 @@
 <body>
 
 <div id="auth" class="anim-in">
-  <h1>📚 Homework Tracker</h1>
-  <p class="sub">7-01 · Track your homework, tick it off, stay ahead.</p>
+  <h1 data-i18n="app.title">📚 Homework Tracker</h1>
+  <p class="sub" data-i18n="app.sub">7-01 · Track your homework, tick it off, stay ahead.</p>
   <p class="error" id="err"></p>
-  <input id="u" placeholder="Username" autocomplete="username">
-  <input id="p" type="password" placeholder="Password" autocomplete="current-password">
+  <input id="u" data-i18n-ph="auth.user" placeholder="Username" autocomplete="username">
+  <input id="p" type="password" data-i18n-ph="auth.pass" placeholder="Password" autocomplete="current-password">
   <div style="display:flex;gap:.5rem;margin-top:.3rem">
-    <button onclick="login()">Sign In</button>
-    <button class="secondary" onclick="register()">Register</button>
+    <button onclick="login()" data-i18n="auth.signin">Sign In</button>
+    <button class="secondary" onclick="register()" data-i18n="auth.register">Register</button>
+  </div>
+  <div class="langrow">
+    <span data-i18n="settings.language">Language</span>
+    <select class="langsel" id="langSelAuth" onchange="pickLang(this.value)"></select>
   </div>
 </div>
 
 <div id="app">
   <div class="topbar anim-in">
     <div class="left">
-      <h1>📚 Homework Tracker</h1> <span id="roleBadge"></span>
+      <h1 data-i18n="app.title">📚 Homework Tracker</h1> <span id="roleBadge"></span>
     </div>
     <div class="right">
       <span id="myAvatar"></span>
       <span id="who"></span>
-      <button class="secondary" onclick="openSettings()">⚙ Settings</button>
-      <button class="secondary" onclick="logout()">Log out</button>
+      <select class="langsel" id="langSelTop" onchange="pickLang(this.value)" title="Language"></select>
+      <button class="secondary" onclick="openSettings()" data-i18n="nav.settings">⚙ Settings</button>
+      <button class="secondary" onclick="logout()" data-i18n="nav.logout">Log out</button>
     </div>
   </div>
 
@@ -200,57 +215,64 @@
   </div>
 
   <div id="ownerPanel" class="panel" style="display:none">
-    <b>🛠 Creator Panel</b> — post an announcement to everyone:
-    <input id="annInput" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem">
-    <button onclick="postAnnouncement()">Post</button>
-    <button onclick="toggleHistory()" class="secondary">📜 History</button>
-    <button onclick="toggleActivity()" class="secondary">🌐 Live Activity</button>
+    <b data-i18n="owner.title">🛠 Creator Panel</b> <span data-i18n="owner.prompt">— post an announcement to everyone:</span>
+    <input id="annInput" data-i18n-ph="owner.input" placeholder="e.g. Test tomorrow!" style="margin:0 .5rem">
+    <button onclick="postAnnouncement()" data-i18n="owner.post">Post</button>
+    <button onclick="toggleHistory()" class="secondary" data-i18n="owner.history">📜 History</button>
+    <button onclick="toggleActivity()" class="secondary" data-i18n="owner.activity">🌐 Live Activity</button>
     <div id="annHistory" style="display:none;margin-top:.75rem;border-top:1px dashed var(--stroke);padding-top:.5rem"></div>
     <div id="activityBox" style="display:none;margin-top:.75rem;border-top:1px dashed var(--stroke);padding-top:.5rem"></div>
   </div>
 
   <div class="tabs">
-    <button id="tabToday" class="active" onclick="tab('today')">📅 Today</button>
-    <button id="tabTomorrow" onclick="tab('tomorrow')">⏭ Tomorrow</button>
-    <button id="tabHw" onclick="tab('hw')">📝 All Homework</button>
-    <button id="tabClass" onclick="tab('class')">🏫 Class Info</button>
-    <button id="tabMembers" onclick="tab('members')" style="display:none">👥 Members</button>
+    <button id="tabToday" class="active" onclick="tab('today')" data-i18n="tab.today">📅 Today</button>
+    <button id="tabTomorrow" onclick="tab('tomorrow')" data-i18n="tab.tomorrow">⏭ Tomorrow</button>
+    <button id="tabHw" onclick="tab('hw')" data-i18n="tab.hw">📝 All Homework</button>
+    <button id="tabClass" onclick="tab('class')" data-i18n="tab.class">🏫 Class Info</button>
+    <button id="tabMembers" onclick="tab('members')" style="display:none" data-i18n="tab.members">👥 Members</button>
   </div>
 
   <div id="viewToday">
     <h2 id="todayTitle"></h2>
-    <p class="stats">Your timetable for today — click "+ Homework" next to a subject to quickly add homework.</p>
+    <p class="stats" data-i18n="today.stats">Your timetable for today — click “+ Homework” next to a subject to quickly add homework.</p>
     <div id="todayList"></div>
   </div>
 
   <div id="viewTomorrow" style="display:none">
     <h2 id="tomorrowTitle"></h2>
-    <p class="stats">Tomorrow's schedule and the homework you still owe for each subject.</p>
+    <p class="stats" data-i18n="tomorrow.stats">Tomorrow's schedule and the homework you still owe for each subject.</p>
     <div id="overdueBox"></div>
     <div id="tomorrowList"></div>
   </div>
 
   <div id="viewClass" style="display:none">
-    <h2>🏫 Class 7-01 — Abu Ali Ibn Sino</h2>
+    <h2 data-i18n="class.title">🏫 Class 7-01 — Abu Ali Ibn Sino</h2>
     <div id="classStats" class="stats"></div>
     <div id="classList"></div>
   </div>
 
   <div id="viewHw" style="display:none">
-    <h2>Academic Year 2026-27</h2>
+    <h2 data-i18n="hw.year">Academic Year 2026-27</h2>
     <div class="ringwrap" id="ringWrap"></div>
     <table>
-      <thead><tr><th>Subject</th><th>Homework</th><th>Date Given</th><th>Due</th><th>Done ✓</th><th></th></tr></thead>
+      <thead><tr>
+        <th data-i18n="th.subject">Subject</th>
+        <th data-i18n="th.task">Homework</th>
+        <th data-i18n="th.given">Date Given</th>
+        <th data-i18n="th.due">Due</th>
+        <th data-i18n="th.done">Done ✓</th>
+        <th></th>
+      </tr></thead>
       <tbody id="rows"></tbody>
     </table>
-    <button class="add" onclick="addRow()">+ Add Homework</button>
+    <button class="add" onclick="addRow()" data-i18n="hw.add">+ Add Homework</button>
   </div>
 
   <div id="viewMembers" style="display:none">
-    <h2>👥 Class 7-01 Members</h2>
-    <p class="stats">Everyone in the class. Click a member to see their profile.</p>
+    <h2 data-i18n="members.title">👥 Class 7-01 Members</h2>
+    <p class="stats" data-i18n="members.stats">Everyone in the class. Click a member to see their profile.</p>
     <div class="searchwrap">
-      <input id="memberSearch" placeholder="🔍 Search by name…" oninput="renderMembers()">
+      <input id="memberSearch" data-i18n-ph="members.search" placeholder="🔍 Search by name…" oninput="filterMembers()">
       <span id="memberCount" class="stats" style="margin:0;white-space:nowrap"></span>
     </div>
     <div id="memberList"></div>
@@ -261,60 +283,64 @@
 <div class="modal-bg" id="profileModal" onclick="if(event.target===this)closeProfile()">
   <div class="modal" style="max-width:460px;text-align:center">
     <div id="profileBody"></div>
-    <button class="secondary" onclick="closeProfile()" style="margin-top:1rem;width:100%">Close</button>
+    <button class="secondary" onclick="closeProfile()" style="margin-top:1rem;width:100%" data-i18n="profile.close">Close</button>
   </div>
 </div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="settingsModal" onclick="if(event.target===this)closeSettings()">
   <div class="modal">
-    <h3>⚙ Profile Settings</h3>
+    <h3 data-i18n="settings.title">⚙ Profile Settings</h3>
 
-    <label>Profile picture</label>
+    <label data-i18n="settings.language">Language</label>
+    <select class="langsel" id="langSelSettings" onchange="pickLang(this.value)" style="width:100%"></select>
+
+    <label data-i18n="settings.avatar">Profile picture</label>
     <div class="row">
       <img id="setAvatarPreview" class="avatar-preview" alt="">
-      <button class="secondary" onclick="changeAvatar()">🖼 Change picture</button>
+      <button class="secondary" onclick="changeAvatar()" data-i18n="settings.changePic">🖼 Change picture</button>
     </div>
 
-    <label>Bio</label>
-    <textarea id="setBio" maxlength="160" placeholder="A few words about you…" rows="3"
+    <label data-i18n="settings.bio">Bio</label>
+    <textarea id="setBio" maxlength="160" data-i18n-ph="settings.bioPh" placeholder="A few words about you…" rows="3"
       style="width:100%;background:rgba(255,255,255,.06);color:var(--txt);border:1px solid var(--stroke);border-radius:12px;padding:.7rem .9rem;outline:none;resize:vertical;font-family:inherit"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.3rem">
-      <small style="color:var(--dim)">Max 160 characters</small>
-      <button onclick="saveBio()">Save bio</button>
+      <small style="color:var(--dim)" data-i18n="settings.bioMax">Max 160 characters</small>
+      <button onclick="saveBio()" data-i18n="settings.saveBio">Save bio</button>
     </div>
 
-    <label>Background image</label>
-    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem">Upload your own photo as the page background.</p>
+    <label data-i18n="settings.bg">Background image</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem" data-i18n="settings.bgDesc">Upload your own photo as the page background.</p>
     <div class="row">
       <div id="bgPreview" style="width:76px;height:52px;border-radius:10px;border:1px solid var(--stroke);background-size:cover;background-position:center"></div>
-      <button class="secondary" onclick="changeBackground()">🖼 Upload background</button>
-      <button class="secondary" onclick="removeBackground()">✕ Remove</button>
+      <button class="secondary" onclick="changeBackground()" data-i18n="settings.bgUpload">🖼 Upload background</button>
+      <button class="secondary" onclick="removeBackground()" data-i18n="settings.bgRemove">✕ Remove</button>
     </div>
 
-    <label>Display name</label>
-    <input id="setUsername" placeholder="Your name">
-    <label>Password (confirm to save name)</label>
-    <input id="setNamePass" type="password" placeholder="Your password">
-    <button onclick="saveName()" style="margin-top:.5rem">Save name</button>
+    <label data-i18n="settings.name">Display name</label>
+    <input id="setUsername" data-i18n-ph="settings.namePh" placeholder="Your name">
+    <label data-i18n="settings.namePass">Password (confirm to save name)</label>
+    <input id="setNamePass" type="password" data-i18n-ph="settings.namePassPh" placeholder="Your password">
+    <button onclick="saveName()" style="margin-top:.5rem" data-i18n="settings.saveName">Save name</button>
 
-    <label>Change password</label>
-    <input id="setCurPass" type="password" placeholder="Current password">
-    <input id="setNewPass" type="password" placeholder="New password (min 4)" style="margin-top:.4rem">
-    <button onclick="savePassword()" style="margin-top:.5rem">Update password</button>
+    <label data-i18n="settings.pass">Change password</label>
+    <input id="setCurPass" type="password" data-i18n-ph="settings.curPass" placeholder="Current password">
+    <input id="setNewPass" type="password" data-i18n-ph="settings.newPass" placeholder="New password (min 4)" style="margin-top:.4rem">
+    <button onclick="savePassword()" style="margin-top:.5rem" data-i18n="settings.savePass">Update password</button>
 
-    <label>Theme color</label>
-    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.2rem">Pick a color scheme for the whole app.</p>
+    <label data-i18n="settings.theme">Theme color</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.2rem" data-i18n="settings.themeDesc">Pick a color scheme for the whole app.</p>
     <div class="themebtns" id="themeBtns"></div>
 
-    <label>Danger zone</label>
-    <button class="danger" onclick="deleteAccount()">🗑 Delete my account</button>
+    <label data-i18n="settings.danger">Danger zone</label>
+    <button class="danger" onclick="deleteAccount()" data-i18n="settings.delete">🗑 Delete my account</button>
 
     <div class="msg" id="setMsg"></div>
-    <button class="secondary" onclick="closeSettings()" style="margin-top:1rem;width:100%">Close</button>
+    <button class="secondary" onclick="closeSettings()" style="margin-top:1rem;width:100%" data-i18n="settings.close">Close</button>
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script>
 // Timetable (from your class schedule) — edit freely
 const TIMETABLE = {
@@ -341,7 +367,45 @@ const TIMETABLE = {
 };
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
-let me = null, rows = [], currentTab = 'today';
+let me = null, rows = [], currentTab = 'today', lastAnn = null, anonLangPick = null;
+
+/* ---------- LANGUAGE ---------- */
+function fillLangSelects(){
+  const html = Object.entries(LANGS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  document.querySelectorAll('select.langsel').forEach(s=>{ s.innerHTML = html; s.value = lang; });
+}
+
+function applyLang(l, rerender = true){
+  lang = LANGS[l] ? l : 'uz';
+  try { localStorage.setItem('ht_lang', lang); } catch {}
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.title = t('app.title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    el.placeholder = t(el.getAttribute('data-i18n-ph'));
+  });
+  document.querySelectorAll('select.langsel').forEach(s=>{ s.value = lang; });
+  if (rerender && me) {
+    roleBadge.innerHTML = me.role === 'owner' ? `<span class="badge">${t('badge.creator')}</span>` : '';
+    renderToday(); renderHw();
+    if (viewTomorrow.style.display !== 'none') renderTomorrow();
+    if (viewClass.style.display !== 'none') renderClassInfo();
+    if (lastMembers.length) filterMembers();
+    if (lastAnn) showAnnouncement(lastAnn);
+    if (activityBox && activityBox.style.display !== 'none') loadActivity();
+    if (annHistory && annHistory.style.display !== 'none') loadHistory();
+  }
+}
+
+async function pickLang(l){
+  applyLang(l, true);
+  if (!me) { anonLangPick = l; return; }
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ lang: l }) });
+  if (!r.error) me.lang = l;
+}
 
 async function api(url, opts={}) {
   const r = await fetch(url, { headers:{'Content-Type':'application/json'}, ...opts });
@@ -352,27 +416,35 @@ function showAuth(){ document.getElementById('auth').style.display='block'; docu
 
 async function login(){
   const r = await api('/api/login',{method:'POST',body:JSON.stringify({username:u.value.trim(),password:p.value})});
-  if (r.error) return err.textContent = r.error, err.style.display='block';
+  if (r.error) return err.textContent = trErr(r.error), err.style.display='block';
   err.style.display='none'; init();
 }
 async function register(){
   const r = await api('/api/register',{method:'POST',body:JSON.stringify({username:u.value.trim(),password:p.value})});
-  if (r.error) return err.textContent = r.error, err.style.display='block';
+  if (r.error) return err.textContent = trErr(r.error), err.style.display='block';
   err.style.display='none'; init();
 }
 async function logout(){ await api('/api/logout',{method:'POST'}); showAuth(); }
 
 async function init(){
   try { me = await api('/api/me'); } catch { return; }
+  if (anonLangPick) {
+    lang = anonLangPick; anonLangPick = null;
+    api('/api/me', { method:'PATCH', body: JSON.stringify({ lang }) }).catch(()=>{});
+    if (me) me.lang = lang;
+  } else if (me.lang && LANGS[me.lang]) {
+    lang = me.lang;
+  }
   auth.style.display='none'; app.style.display='block';
   who.textContent = me.username;
   myAvatar.innerHTML = avatarImg(me.avatar, 32);
-  roleBadge.innerHTML = me.role === 'owner' ? '<span class="badge">🛠 CREATOR</span>' : '';
+  roleBadge.innerHTML = me.role === 'owner' ? `<span class="badge">${t('badge.creator')}</span>` : '';
   ownerPanel.style.display = me.role === 'owner' ? '' : 'none';
   tabMembers.style.display = '';
   const ann = await api('/api/announcement');
   showAnnouncement(ann);
   rows = await api('/api/homework');
+  applyLang(lang, false);
   applyTheme(me.theme || 'ocean');
   applyBackground(me.bg);
   renderToday(); renderHw(); renderMembers();
@@ -403,18 +475,19 @@ function todayName(){ return DAYS[new Date().getDay()]; }
 
 function renderToday(){
   const day = todayName();
-  todayTitle.textContent = "Today: " + day + " (" + new Date().toLocaleDateString() + ")";
+  const d = new Date();
+  todayTitle.textContent = t('today.title', { day: dayName(d.getDay()), date: d.toLocaleDateString(localeOf()) });
   const items = TIMETABLE[day] || [];
   todayList.innerHTML = items.length === 0
-    ? '<p class="stats">No school today 🎉</p>'
+    ? `<p class="stats">${t('no.school.today')}</p>`
     : items.map(([p,subj,teacher,room])=>{
         const hw = rows.filter(r=>r.subject===subj);
         const pending = hw.filter(r=>!r.done).length;
         return `<div class="period">
-          <div><b>Period ${p}</b> — ${subj}<br><small style="color:#8b949e">${teacher}${room?' · Room '+room:''}</small></div>
+          <div><b>${t('period',{n:p})}</b> — ${subjectName(subj)}<br><small style="color:#8b949e">${teacher}${room?' · '+t('room',{n:room}):''}</small></div>
           <div>
-            ${pending?`<small style="color:#f0b429">${pending} pending</small>`:''}
-            <button class="mini" onclick="quickAdd('${subj}')">+ Homework</button>
+            ${pending?`<small style="color:#f0b429">${t('pending',{n:pending})}</small>`:''}
+            <button class="mini" onclick="quickAdd('${subj}')">${t('add.hw')}</button>
           </div>
         </div>`;
       }).join('');
@@ -424,25 +497,25 @@ function renderTomorrow(){
   const dayIdx = (new Date().getDay() + 1) % 7;
   const day = DAYS[dayIdx];
   const d = new Date(); d.setDate(d.getDate() + 1);
-  tomorrowTitle.textContent = "Tomorrow: " + day + " (" + d.toLocaleDateString() + ")";
+  tomorrowTitle.textContent = t('tomorrow.title', { day: dayName(dayIdx), date: d.toLocaleDateString(localeOf()) });
   const items = TIMETABLE[day] || [];
   const today = new Date().toISOString().slice(0,10);
 
   const overdue = rows.filter(r=>!r.done && r.due && r.due < today);
   const dueTomorrow = rows.filter(r=>!r.done && r.due === d.toISOString().slice(0,10));
   overdueBox.innerHTML = (overdue.length || dueTomorrow.length) ? (
-    (overdue.length ? `<div class="period" style="border-left-color:#f85149"><div><b style="color:#f85149">⏰ Overdue (${overdue.length})</b><br>${overdue.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '') +
-    (dueTomorrow.length ? `<div class="period" style="border-left-color:#f0b429"><div><b style="color:#f0b429">📅 Due tomorrow (${dueTomorrow.length})</b><br>${dueTomorrow.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '')
+    (overdue.length ? `<div class="period" style="border-left-color:#f85149"><div><b style="color:#f85149">${t('overdue',{n:overdue.length})}</b><br>${overdue.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '') +
+    (dueTomorrow.length ? `<div class="period" style="border-left-color:#f0b429"><div><b style="color:#f0b429">${t('due.tomorrow',{n:dueTomorrow.length})}</b><br>${dueTomorrow.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '')
   ) : '';
 
   tomorrowList.innerHTML = items.length === 0
-    ? '<p class="stats">No school tomorrow 🎉</p>'
+    ? `<p class="stats">${t('no.school.tomorrow')}</p>`
     : items.map(([p,subj,teacher,room])=>{
         const pend = rows.filter(r=>r.subject===subj && !r.done);
         return `<div class="period" ${pend.length?'style="border-left-color:#f0b429"':''}>
-          <div><b>Period ${p}</b> — ${subj}<br><small style="color:#8b949e">${teacher}${room?' · Room '+room:''}</small>
+          <div><b>${t('period',{n:p})}</b> — ${subjectName(subj)}<br><small style="color:#8b949e">${teacher}${room?' · '+t('room',{n:room}):''}</small>
           ${pend.length?`<br><small style="color:#f0b429">⏳ ${pend.map(r=>esc(r.task)).join(', ')}</small>`:''}</div>
-          <div><button class="mini" onclick="quickAdd('${subj}')">+ Homework</button></div>
+          <div><button class="mini" onclick="quickAdd('${subj}')">${t('add.hw')}</button></div>
         </div>`;
       }).join('');
 }
@@ -469,10 +542,10 @@ function renderClassInfo(){
   const chip = (bg, txt, sub) => `<div class="period" style="border-left-color:${bg};align-items:flex-start">
       <div><b style="font-size:1.4rem;color:${bg}">${txt}</b><br><small>${sub}</small></div></div>`;
   classStats.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem">
-    ${chip('#6d8dff', CLASS.length, 'Total students')}
-    ${chip('#58a6ff', boys, 'Boys 👦')}
-    ${chip('#ff7ac6', girls, 'Girls 👧')}
-    ${chip('#ffcc5c', creators, 'Creator 🛠')}
+    ${chip('#6d8dff', CLASS.length, t('class.total'))}
+    ${chip('#58a6ff', boys, t('class.boys'))}
+    ${chip('#ff7ac6', girls, t('class.girls'))}
+    ${chip('#ffcc5c', creators, t('class.creator'))}
   </div>`;
   classList.innerHTML = CLASS.map((s,i)=>`
     <div class="period anim-in" style="border-left-color:${s.g==='m'?'#58a6ff':'#ff7ac6'};animation-delay:${i*25}ms">
@@ -480,15 +553,15 @@ function renderClassInfo(){
         <span style="width:38px;height:38px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:1.25rem;background:${s.g==='m'?'#58a6ff22':'#ff7ac622'}">${s.g==='m'?'👦':'👧'}</span>
         <div>
           <b>${esc(s.n)}</b>
-          ${s.creator?'<span class="badge" style="margin-left:.5rem">🛠 CREATOR</span>':''}
-          <br><small style="color:var(--dim)">${s.g==='m'?'Boy':'Girl'} · No. ${i+1}</small>
+          ${s.creator?`<span class="badge" style="margin-left:.5rem">${t('badge.creator')}</span>`:''}
+          <br><small style="color:var(--dim)">${s.g==='m'?t('class.boy'):t('class.girl')} · ${t('class.no',{n:i+1})}</small>
         </div>
       </div>
     </div>`).join('');
 }
 
 async function quickAdd(subj){
-  const task = prompt(`Homework for ${subj}:`);
+  const task = prompt(t('quickadd', { subject: subjectName(subj) }));
   if (!task) return;
   const today = new Date().toISOString().slice(0,10);
   await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27',subject:subj,task,given:today})});
@@ -513,11 +586,11 @@ function renderHw(){
       <circle class="fgc" cx="43" cy="43" r="${R}" fill="none" stroke-width="9"
         stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
     </svg>
-    <div class="ringtxt"><b>${pct}%</b>${done}/${total} done${me?.role==='owner'?` · all time ${rows.filter(r=>r.done).length}/${rows.length}`:''}</div>`;
+    <div class="ringtxt"><b>${pct}%</b>${t('hw.done',{done,total})}${me?.role==='owner'?t('hw.alltime',{done:rows.filter(r=>r.done).length,total:rows.length}):''}</div>`;
   document.getElementById('rows').innerHTML = list.map(r=>`
     <tr class="${r.done?'done':''}">
-      <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="Math"></td>
-      <td><input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="Exercise 5"></td>
+      <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="${t('ph.subject')}"></td>
+      <td><input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="${t('ph.task')}"></td>
       <td><input type="date" value="${r.given}" onchange="saveRow(${r.id},'given',this.value)"></td>
       <td><input type="date" value="${r.due}" onchange="saveRow(${r.id},'due',this.value)"></td>
       <td style="text-align:center"><input type="checkbox" ${r.done?'checked':''} onchange="toggleDone(${r.id},this.checked)"></td>
@@ -536,14 +609,14 @@ async function changeAvatar(){
   input.type = 'file'; input.accept = 'image/*';
   input.onchange = async () => {
     const file = input.files[0]; if (!file) return;
-    if (file.size > 1900000) return setMsg('err', 'Image too large — pick a smaller one (under ~1.5 MB).');
+    if (file.size > 1900000) return setMsg('err', t('err.img'));
     const reader = new FileReader();
     reader.onload = async () => {
       const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ avatar: reader.result }) });
-      if (r.error) return setMsg('err', r.error);
+      if (r.error) return setMsg('err', trErr(r.error));
       me = await api('/api/me'); myAvatar.innerHTML = avatarImg(me.avatar, 32); renderMembers();
       const pv = document.getElementById('setAvatarPreview'); if (pv) pv.src = me.avatar;
-      setMsg('ok', 'Picture updated ✅');
+      setMsg('ok', t('msg.pic'));
     };
     reader.readAsDataURL(file);
   };
@@ -554,7 +627,7 @@ async function postAnnouncement(){
   const text = annInput.value.trim();
   if (!text) return;
   const r = await api('/api/announcement', { method:'POST', body: JSON.stringify({ text }) });
-  if (r.error) return alert(r.error);
+  if (r.error) return alert(trErr(r.error));
   annInput.value = '';
   showAnnouncement(await api('/api/announcement'));
   loadHistory();
@@ -594,8 +667,8 @@ function renderThemeBtns(){
 async function pickTheme(k){
   applyTheme(k);
   const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ theme: k }) });
-  if (r.error) return setMsg('err', r.error);
-  me.theme = k; setMsg('ok', 'Theme saved ✅');
+  if (r.error) return setMsg('err', trErr(r.error));
+  me.theme = k; setMsg('ok', t('msg.theme'));
 }
 
 /* ---------- BACKGROUND ---------- */
@@ -613,16 +686,16 @@ async function changeBackground(){
   input.type = 'file'; input.accept = 'image/*';
   input.onchange = async () => {
     const file = input.files[0]; if (!file) return;
-    if (file.size > 3300000) return setMsg('err', 'Background too large — pick an image under ~3 MB.');
+    if (file.size > 3300000) return setMsg('err', t('err.bg'));
     const reader = new FileReader();
     reader.onload = async () => {
       const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: reader.result }) });
-      if (r.error) return setMsg('err', r.error);
+      if (r.error) return setMsg('err', trErr(r.error));
       me = await api('/api/me');
       applyBackground(me.bg);
       const pv = document.getElementById('bgPreview');
       if (pv) pv.style.backgroundImage = `url("${me.bg}")`;
-      setMsg('ok', 'Background updated ✅');
+      setMsg('ok', t('msg.bg'));
     };
     reader.readAsDataURL(file);
   };
@@ -630,17 +703,17 @@ async function changeBackground(){
 }
 async function removeBackground(){
   const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: '' }) });
-  if (r.error) return setMsg('err', r.error);
+  if (r.error) return setMsg('err', trErr(r.error));
   me = await api('/api/me'); applyBackground('');
   const pv = document.getElementById('bgPreview');
   if (pv) pv.style.backgroundImage = 'none';
-  setMsg('ok', 'Background removed ✅');
+  setMsg('ok', t('msg.bgremoved'));
 }
 async function saveBio(){
   const bio = document.getElementById('setBio').value.trim();
   const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bio }) });
-  if (r.error) return setMsg('err', r.error);
-  me = await api('/api/me'); setMsg('ok', 'Bio saved ✅'); renderMembers();
+  if (r.error) return setMsg('err', trErr(r.error));
+  me = await api('/api/me'); setMsg('ok', t('msg.bio')); renderMembers();
 }
 
 /* ---------- SETTINGS ---------- */
@@ -669,40 +742,41 @@ async function saveName(){
   const u = document.getElementById('setUsername').value.trim();
   const p = document.getElementById('setNamePass').value;
   const r = await api('/api/me/name', { method:'PATCH', body: JSON.stringify({ username: u, password: p }) });
-  if (r.error) return setMsg('err', r.error);
+  if (r.error) return setMsg('err', trErr(r.error));
   me = await api('/api/me'); who.textContent = me.username; renderMembers();
   document.getElementById('setNamePass').value = '';
-  setMsg('ok', 'Name updated ✅');
+  setMsg('ok', t('msg.name'));
 }
 async function savePassword(){
   const c = document.getElementById('setCurPass').value;
   const n = document.getElementById('setNewPass').value;
   const r = await api('/api/me/password', { method:'PATCH', body: JSON.stringify({ current: c, next: n }) });
-  if (r.error) return setMsg('err', r.error);
+  if (r.error) return setMsg('err', trErr(r.error));
   document.getElementById('setCurPass').value = '';
   document.getElementById('setNewPass').value = '';
-  setMsg('ok', 'Password updated ✅');
+  setMsg('ok', t('msg.pass'));
 }
 async function deleteAccount(){
-  if (!confirm('Delete your account permanently? This cannot be undone.')) return;
+  if (!confirm(t('confirm.deleteAccount'))) return;
   const r = await api('/api/me', { method:'DELETE' });
-  if (r.error) return setMsg('err', r.error);
-  localStorage.removeItem('ht_session'); alert('Account deleted. Bye!'); location.reload();
+  if (r.error) return setMsg('err', trErr(r.error));
+  localStorage.removeItem('ht_session'); alert(t('alert.deleted')); location.reload();
 }
 
 function showAnnouncement(ann){
+  lastAnn = ann;
   if (!ann.text) { announcementBox.style.display='none'; return; }
-  annText.innerHTML = '📢 <b>Announcement:</b> ' + esc(ann.text);
+  annText.innerHTML = t('ann.title') + esc(ann.text);
   const d = ann.date ? new Date(ann.date) : null;
-  annMeta.textContent = (ann.author ? '— ' + ann.author : '') + (d ? ' · ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '');
+  annMeta.textContent = (ann.author ? '— ' + ann.author : '') + (d ? ' · ' + d.toLocaleDateString(localeOf()) + ' ' + d.toLocaleTimeString(localeOf(), {hour:'2-digit', minute:'2-digit'}) : '');
   annClearBtn.style.display = me?.role === 'owner' ? '' : 'none';
   announcementBox.style.display='';
 }
 
 async function clearAnnouncement(){
-  if (!confirm('Remove this announcement?')) return;
+  if (!confirm(t('confirm.removeAnn'))) return;
   const r = await api('/api/announcement', { method:'DELETE' });
-  if (r.error) return alert(r.error);
+  if (r.error) return alert(trErr(r.error));
   announcementBox.style.display='none';
   loadHistory();
 }
@@ -717,11 +791,11 @@ async function loadHistory(){
   const list = await api('/api/announcements');
   if (list.error) return;
   annHistory.innerHTML = list.length === 0
-    ? '<span style="color:#8b949e">No announcements yet.</span>'
+    ? `<span style="color:#8b949e">${t('ann.none')}</span>`
     : list.map(a => {
         const d = new Date(a.created_at);
         return `<div style="padding:.25rem 0;border-bottom:1px solid #21262d">
-          ${esc(a.text)} <span style="color:#8b949e;font-size:.85rem">— ${esc(a.author)} · ${d.toLocaleDateString()}</span>
+          ${esc(a.text)} <span style="color:#8b949e;font-size:.85rem">— ${esc(a.author)} · ${d.toLocaleDateString(localeOf())}</span>
         </div>`;
       }).join('');
 }
@@ -734,16 +808,16 @@ async function toggleActivity(){
 
 async function loadActivity(){
   const a = await api('/api/activity');
-  if (a.error) { activityBox.innerHTML = '<span style="color:#8b949e">Access denied.</span>'; return; }
-  const online = a.online.map(u=>`<b>${esc(u)}</b>`).join(', ') || '<span style="color:#8b949e">nobody</span>';
+  if (a.error) { activityBox.innerHTML = `<span style="color:#8b949e">${t('ann.denied')}</span>`; return; }
+  const online = a.online.map(u=>`<b>${esc(u)}</b>`).join(', ') || `<span style="color:#8b949e">${t('activity.nobody')}</span>`;
   activityBox.innerHTML =
-    `<div style="padding:.4rem 0"><span style="color:#4ac26b">●</span> <b>Online now:</b> ${online}</div>` +
+    `<div style="padding:.4rem 0"><span style="color:#4ac26b">●</span> <b>${t('activity.online')}</b> ${online}</div>` +
     (a.feed.length === 0
-      ? '<span style="color:#8b949e">No activity yet.</span>'
+      ? `<span style="color:#8b949e">${t('activity.none')}</span>`
       : a.feed.map(f => {
           const d = new Date(f.created_at);
           return `<div style="padding:.25rem 0;border-bottom:1px solid #21262d">
-            <b>${esc(f.username)}</b> ${esc(f.action)} <span style="color:#8b949e;font-size:.85rem">· ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            <b>${esc(f.username)}</b> ${esc(f.action)} <span style="color:#8b949e;font-size:.85rem">· ${d.toLocaleDateString(localeOf())} ${d.toLocaleTimeString(localeOf(), {hour:'2-digit', minute:'2-digit'})}</span>
           </div>`;
         }).join(''));
 }
@@ -802,7 +876,7 @@ function filterMembers(){
   const cnt = document.getElementById('memberCount');
   if (cnt) cnt.textContent = list.length + ' / ' + lastMembers.length;
   if (!list.length) {
-    memberList.innerHTML = '<p class="stats" style="text-align:center;padding:1.2rem">Hech kim topilmadi 🔍</p>';
+    memberList.innerHTML = `<p class="stats" style="text-align:center;padding:1.2rem">${t('members.none')}</p>`;
     return;
   }
   const isOwner = me?.role === 'owner';
@@ -811,12 +885,12 @@ function filterMembers(){
       <div class="who" onclick="openProfile(${u.id})">
         ${avatarImg(u.avatar, 38)}
         <div style="min-width:0">
-          <div><b>${escHtml(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}${u.id===me?.id?' <span style="font-size:.72rem;color:var(--blue)">(siz)</span>':''}</div>
-          <div class="bio">${u.bio ? escHtml(u.bio) : '<i>bio yo\'q</i>'}</div>
+          <div><b>${escHtml(u.username)}</b>${u.role==='owner'?` <span class="badge">${t('badge.creator')}</span>`:''}${u.id===me?.id?` <span style="font-size:.72rem;color:var(--blue)">${t('members.you')}</span>`:''}</div>
+          <div class="bio">${u.bio ? escHtml(u.bio) : `<i>${t('members.nobio')}</i>`}</div>
         </div>
       </div>
       <div style="display:flex;gap:.4rem;flex-shrink:0">
-        <button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="openProfile(${u.id})">👁 Profil</button>
+        <button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="openProfile(${u.id})">${t('members.profile')}</button>
         ${isOwner && u.role!=='owner' && u.id!==me?.id
           ? `<button class="del" onclick="deleteMember(${u.id},'${esc(u.username)}')">🗑</button>` : ''}
       </div>
@@ -831,19 +905,19 @@ function openProfile(id){
     <div style="display:flex;flex-direction:column;align-items:center;gap:.55rem">
       <div style="font-size:2.6rem;line-height:1">${u.avatar ? avatarImg(u.avatar, 110) : '👤'}</div>
       <div style="font-size:1.25rem;font-weight:800">${escHtml(u.username)}</div>
-      ${u.role==='owner'?'<span class="badge">🛠 CREATOR</span>':'<span class="badge" style="background:rgba(109,141,255,.18)">🎒 Student</span>'}
+      ${u.role==='owner'?`<span class="badge">${t('badge.creator')}</span>`:`<span class="badge" style="background:rgba(109,141,255,.18)">${t('profile.student')}</span>`}
       <div style="font-size:.92rem;color:var(--dim);max-width:38ch;line-height:1.55;margin-top:.3rem">
-        ${u.bio ? escHtml(u.bio) : 'Bu o\'quvchida bio yo\'q.'}
+        ${u.bio ? escHtml(u.bio) : t('profile.nobio')}
       </div>
       ${isOwner && u.role!=='owner'
-        ? `<button class="secondary" style="margin-top:.8rem" onclick="closeProfile();viewMember(${u.id},'${esc(u.username)}')">📚 Vazifalarini ko\'rish (faqat creator)</button>` : ''}
+        ? `<button class="secondary" style="margin-top:.8rem" onclick="closeProfile();viewMember(${u.id},'${esc(u.username)}')">${t('profile.hw')}</button>` : ''}
     </div>`;
   document.getElementById('profileModal').classList.add('show');
 }
 function closeProfile(){ document.getElementById('profileModal').classList.remove('show'); }
 
 async function deleteMember(id, name){
-  if (!confirm(`Delete account "${name}" and all their homework?`)) return;
+  if (!confirm(t('confirm.deleteMember', { name }))) return;
   await api('/api/members/'+id, { method:'DELETE' });
   renderMembers();
 }
@@ -851,17 +925,19 @@ async function deleteMember(id, name){
 async function viewMember(id, name){
   const hw = await api('/api/members/'+id+'/homework');
   const list = hw.filter(r=>r.year==='2026-27');
-  if (!list.length) return alert(name + " has no homework yet.");
+  if (!list.length) return alert(t('alert.noHw', { name }));
   const win = window.open('', '_blank');
   win.document.write(`<body style="background:#0d1117;color:#e6edf3;font-family:Segoe UI,sans-serif;padding:2rem">
-    <h2 style="color:#58a6ff">${name}'s homework</h2>
+    <h2 style="color:#58a6ff">${t('viewHw.title', { name })}</h2>
     <table border="1" cellpadding="8" style="border-collapse:collapse;border-color:#30363d">
-    <tr><th>Subject</th><th>Homework</th><th>Given</th><th>Due</th></tr>
+    <tr><th>${t('th.subject')}</th><th>${t('th.task')}</th><th>${t('th.given')}</th><th>${t('th.due')}</th></tr>
     ${list.map(r=>`<tr><td>${r.subject}</td><td>${r.task}</td><td>${r.given}</td><td>${r.due}</td></tr>`).join('')}
     </table></body>`);
 }
 
 p.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+fillLangSelects();
+applyLang(lang, false);
 init();
 </script>
 </body>

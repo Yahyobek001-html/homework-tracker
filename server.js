@@ -25,6 +25,7 @@ if (process.env.DATABASE_URL) {
       theme TEXT DEFAULT 'ocean',
       bio TEXT DEFAULT '',
       bg TEXT DEFAULT '',
+      lang TEXT DEFAULT 'uz',
       created_at TIMESTAMP DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS sessions (
@@ -63,6 +64,7 @@ if (process.env.DATABASE_URL) {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bg TEXT DEFAULT ''");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'ocean'");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'uz'");
 } else {
   const { DatabaseSync } = await import("node:sqlite");
   const fs = await import("node:fs");
@@ -80,6 +82,7 @@ if (process.env.DATABASE_URL) {
       theme TEXT DEFAULT 'ocean',
       bio TEXT DEFAULT '',
       bg TEXT DEFAULT '',
+      lang TEXT DEFAULT 'uz',
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT DEFAULT (datetime('now')));
@@ -103,7 +106,7 @@ if (process.env.DATABASE_URL) {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
-  for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'"]) {
+  for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'", "lang TEXT DEFAULT 'uz'"]) {
     try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
   }
   q = (sql, p = []) => db.prepare(sql).all(...p);
@@ -206,14 +209,15 @@ app.get("/api/me", async (req, res) => {
     avatar: user.avatar || "",
     theme: user.theme || "ocean",
     bio: user.bio || "",
-    bg: user.bg || ""
+    bg: user.bg || "",
+    lang: user.lang || "uz"
   });
 });
 
 app.patch("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  const { avatar, theme, bio, bg } = req.body || {};
+  const { avatar, theme, bio, bg, lang } = req.body || {};
   if (typeof avatar === "string") {
     if (avatar.length > 2600000) return res.status(400).json({ error: "Image too large (max ~1.8 MB)." });
     await run("UPDATE users SET avatar = ? WHERE id = ?", [avatar, user.id]);
@@ -227,6 +231,9 @@ app.patch("/api/me", async (req, res) => {
   }
   if (typeof bio === "string") {
     await run("UPDATE users SET bio = ? WHERE id = ?", [bio.slice(0, 160), user.id]);
+  }
+  if (typeof lang === "string" && ["en", "uz", "ru", "ar", "es", "fr"].includes(lang)) {
+    await run("UPDATE users SET lang = ? WHERE id = ?", [lang, user.id]);
   }
   res.json({ ok: true });
 });
