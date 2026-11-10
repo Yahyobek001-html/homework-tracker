@@ -23,6 +23,8 @@ if (process.env.DATABASE_URL) {
       role TEXT DEFAULT 'student',
       avatar TEXT DEFAULT '',
       theme TEXT DEFAULT 'ocean',
+      bio TEXT DEFAULT '',
+      bg TEXT DEFAULT '',
       created_at TIMESTAMP DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS sessions (
@@ -57,6 +59,10 @@ if (process.env.DATABASE_URL) {
       created_at TIMESTAMP DEFAULT now()
     );
   `);
+  // migrations for existing databases
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bg TEXT DEFAULT ''");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'ocean'");
 } else {
   const { DatabaseSync } = await import("node:sqlite");
   const fs = await import("node:fs");
@@ -72,6 +78,8 @@ if (process.env.DATABASE_URL) {
       role TEXT DEFAULT 'student',
       avatar TEXT DEFAULT '',
       theme TEXT DEFAULT 'ocean',
+      bio TEXT DEFAULT '',
+      bg TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT DEFAULT (datetime('now')));
@@ -95,6 +103,9 @@ if (process.env.DATABASE_URL) {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+  for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'"]) {
+    try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
+  }
   q = (sql, p = []) => db.prepare(sql).all(...p);
   run = (sql, p = []) => {
     const info = db.prepare(sql).run(...p);
@@ -102,7 +113,7 @@ if (process.env.DATABASE_URL) {
   };
 }
 
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(process.cwd(), "public")));
 
 function hash(password, salt) {
@@ -192,20 +203,29 @@ app.get("/api/me", async (req, res) => {
     username: user.username,
     role: user.role,
     avatar: user.avatar || "",
-    theme: user.theme || "ocean"
+    theme: user.theme || "ocean",
+    bio: user.bio || "",
+    bg: user.bg || ""
   });
 });
 
 app.patch("/api/me", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  const { avatar, theme } = req.body || {};
+  const { avatar, theme, bio, bg } = req.body || {};
   if (typeof avatar === "string") {
-    if (avatar.length > 2500000) return res.status(400).json({ error: "Image too large (max ~1.8 MB)." });
+    if (avatar.length > 2600000) return res.status(400).json({ error: "Image too large (max ~1.8 MB)." });
     await run("UPDATE users SET avatar = ? WHERE id = ?", [avatar, user.id]);
+  }
+  if (typeof bg === "string") {
+    if (bg.length > 5200000) return res.status(400).json({ error: "Background too large (max ~3.5 MB)." });
+    await run("UPDATE users SET bg = ? WHERE id = ?", [bg, user.id]);
   }
   if (typeof theme === "string") {
     await run("UPDATE users SET theme = ? WHERE id = ?", [theme, user.id]);
+  }
+  if (typeof bio === "string") {
+    await run("UPDATE users SET bio = ? WHERE id = ?", [bio.slice(0, 160), user.id]);
   }
   res.json({ ok: true });
 });
@@ -334,7 +354,7 @@ app.get("/api/members", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
   if (user.role !== "owner") return res.status(403).json({ error: "Only the creator can see members." });
-  const users = await q("SELECT id, username, role, avatar FROM users ORDER BY id");
+  const users = await q("SELECT id, username, role, avatar, bio FROM users ORDER BY id");
   res.json(users);
 });
 

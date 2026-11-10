@@ -257,6 +257,22 @@
       <button class="secondary" onclick="changeAvatar()">🖼 Change picture</button>
     </div>
 
+    <label>Bio</label>
+    <textarea id="setBio" maxlength="160" placeholder="A few words about you…" rows="3"
+      style="width:100%;background:rgba(255,255,255,.06);color:var(--txt);border:1px solid var(--stroke);border-radius:12px;padding:.7rem .9rem;outline:none;resize:vertical;font-family:inherit"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.3rem">
+      <small style="color:var(--dim)">Max 160 characters</small>
+      <button onclick="saveBio()">Save bio</button>
+    </div>
+
+    <label>Background image</label>
+    <p style="font-size:.82rem;color:var(--dim);margin-bottom:.35rem">Upload your own photo as the page background.</p>
+    <div class="row">
+      <div id="bgPreview" style="width:76px;height:52px;border-radius:10px;border:1px solid var(--stroke);background-size:cover;background-position:center"></div>
+      <button class="secondary" onclick="changeBackground()">🖼 Upload background</button>
+      <button class="secondary" onclick="removeBackground()">✕ Remove</button>
+    </div>
+
     <label>Display name</label>
     <input id="setUsername" placeholder="Your name">
     <label>Password (confirm to save name)</label>
@@ -284,20 +300,20 @@
 // Timetable (from your class schedule) — edit freely
 const TIMETABLE = {
   Monday: [
-    ["1","KS","Ms. Qydina","106"],["2","NatLang","Ms. Qydina","106"],["3","English","Ms. Feruza","108"],
+    ["1","KS","Ms. Oydina","106"],["2","NatLang","Ms. Oydina","106"],["3","English","Ms. Feruza","108"],
     ["4","Math","Ms. Zamira","102"],["5","Computing","Mr. Uche","103"],["6","Science","Ms. Hazel","205"],["7","His_World","Mr. Abrorbek","206"]
   ],
   Tuesday: [
-    ["1","Science","Ms. Hazel","205"],["2","GP","Mr. Nathan","109"],["3","NatLang","Ms. Qydina","106"],
+    ["1","Science","Ms. Hazel","205"],["2","GP","Mr. Nathan","109"],["3","NatLang","Ms. Oydina","106"],
     ["4","Russian","Ms. Zamira","105"],["5","Math","Ms. Zamira","102"],["6","Geo","Ms. Sevara","107"],["7","Physical education","Sport Zal",""]
   ],
   Wednesday: [
     ["1","English","Ms. Feruza","108"],["2","Math","Ms. Zamira","102"],["3","Russian","Ms. Zamira","105"],
-    ["4","NatLang","Ms. Qydina","106"],["5","Music","Mr. Rustam","105"],["6","Uzb_Lit","Ms. Qydina","106"],["7","His_Uzb","Mr. Abrorbek","206"]
+    ["4","NatLang","Ms. Oydina","106"],["5","Music","Mr. Rustam","105"],["6","Uzb_Lit","Ms. Oydina","106"],["7","His_Uzb","Mr. Abrorbek","206"]
   ],
   Thursday: [
     ["1","Computing","Mr. Uche","103"],["2","His_Uzb","Mr. Abrorbek","206"],["3","English","Ms. Feruza","108"],
-    ["4","Physical education","Sport Zal",""],["5","Math","Ms. Zamira","102"],["6","Uzb_Lit","Ms. Qydina","106"],["7","Science","Ms. Hazel","204"]
+    ["4","Physical education","Sport Zal",""],["5","Math","Ms. Zamira","102"],["6","Uzb_Lit","Ms. Oydina","106"],["7","Science","Ms. Hazel","204"]
   ],
   Friday: [
     ["1","Math","Ms. Zamira","102"],["2","Drawing","Ms. Maftuna",""],["3","Science","Ms. Hazel","202"],
@@ -339,6 +355,7 @@ async function init(){
   showAnnouncement(ann);
   rows = await api('/api/homework');
   applyTheme(me.theme || 'ocean');
+  applyBackground(me.bg);
   renderToday(); renderHw(); renderMembers();
   localStorage.setItem('ht_session', '1');
   api('/api/ping', { method: 'POST' }).catch(() => {});
@@ -562,6 +579,51 @@ async function pickTheme(k){
   me.theme = k; setMsg('ok', 'Theme saved ✅');
 }
 
+/* ---------- BACKGROUND ---------- */
+function applyBackground(bg){
+  if (bg) {
+    document.body.style.background =
+      `linear-gradient(rgba(7,10,20,.70), rgba(7,10,20,.88)), url("${bg}") center/cover no-repeat fixed`;
+    document.body.style.backgroundSize = 'cover';
+  } else {
+    document.body.style.background = '';
+  }
+}
+async function changeBackground(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0]; if (!file) return;
+    if (file.size > 3300000) return setMsg('err', 'Background too large — pick an image under ~3 MB.');
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: reader.result }) });
+      if (r.error) return setMsg('err', r.error);
+      me = await api('/api/me');
+      applyBackground(me.bg);
+      const pv = document.getElementById('bgPreview');
+      if (pv) pv.style.backgroundImage = `url("${me.bg}")`;
+      setMsg('ok', 'Background updated ✅');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+async function removeBackground(){
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bg: '' }) });
+  if (r.error) return setMsg('err', r.error);
+  me = await api('/api/me'); applyBackground('');
+  const pv = document.getElementById('bgPreview');
+  if (pv) pv.style.backgroundImage = 'none';
+  setMsg('ok', 'Background removed ✅');
+}
+async function saveBio(){
+  const bio = document.getElementById('setBio').value.trim();
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bio }) });
+  if (r.error) return setMsg('err', r.error);
+  me = await api('/api/me'); setMsg('ok', 'Bio saved ✅'); renderMembers();
+}
+
 /* ---------- SETTINGS ---------- */
 function setMsg(kind, txt){
   const m = document.getElementById('setMsg'); if (!m) return;
@@ -570,9 +632,12 @@ function setMsg(kind, txt){
 }
 function openSettings(){
   document.getElementById('setUsername').value = me.username;
+  document.getElementById('setBio').value = me.bio || '';
   const pv = document.getElementById('setAvatarPreview');
   pv.src = me.avatar || '';
   pv.style.display = me.avatar ? 'block' : 'none';
+  const bp = document.getElementById('bgPreview');
+  bp.style.backgroundImage = me.bg ? `url("${me.bg}")` : 'none';
   ['setNamePass','setCurPass','setNewPass'].forEach(id=>document.getElementById(id).value='');
   applyTheme(me.theme || 'ocean');
   document.getElementById('setMsg').className = 'msg';
@@ -696,11 +761,19 @@ function confetti(){
 async function addRow(){ await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27'})}); rows = await api('/api/homework'); renderHw(); }
 async function delRow(id){ await api('/api/homework/'+id,{method:'DELETE'}); rows = rows.filter(r=>r.id!==id); renderHw(); renderToday(); }
 
+function escHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 async function renderMembers(){
   const m = await api('/api/members');
   memberList.innerHTML = m.map(u=>`
     <div class="member">
-      <div>${avatarImg(u.avatar, 28)} <b>${esc(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}</div>
+      <div>
+        <div>${avatarImg(u.avatar, 28)} <b>${esc(u.username)}</b>${u.role==='owner'?' <span class="badge">🛠 CREATOR</span>':''}</div>
+        ${u.bio ? `<div style="font-size:.82rem;color:var(--dim);margin:.25rem 0 0 36px">${escHtml(u.bio)}</div>` : ''}
+      </div>
       <div>
         ${u.role==='owner' ? '' : `<button class="secondary" style="padding:.25rem .6rem;font-size:.8rem" onclick="viewMember(${u.id},'${esc(u.username)}')">👁 View</button>
         <button class="del" onclick="deleteMember(${u.id},'${esc(u.username)}')">🗑 Delete</button>`}
