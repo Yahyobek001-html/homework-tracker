@@ -32,6 +32,27 @@
 
 Done! Your site gets a permanent URL like `https://homework-tracker-xxxx.onrender.com`.
 
+## 4. Optional: connect a real AI model
+The 🤖 assistant works out of the box with a built-in offline helper (no key needed).
+To use a real LLM instead, add these Render environment variables:
+
+| Key | Value | Example |
+| --- | --- | --- |
+| `AI_API_KEY` | API key from your provider | `sk-...` |
+| `AI_BASE_URL` | OpenAI-compatible endpoint (optional) | `https://api.openai.com/v1` |
+| `AI_MODEL` | Model name (optional) | `gpt-4o-mini` |
+
+`OPENAI_API_KEY` and `OPENROUTER_API_KEY` also work as the key variable.
+If the request fails or no key is set, the assistant automatically falls back to the built-in helper.
+
+## New features
+- 🤖 AI assistant: what's left, overdue, tomorrow, study tips, motivation and a 7-day plan
+- 📅 Homework calendar with priority dots
+- 🏆 Class rating (completed counts only — private tasks stay private)
+- 📊 Progress bars per subject
+- 📝 Notes, priority levels, duplicate, multi-select delete and print view
+- ⏱ Pomodoro focus timer and a quick light/dark switch
+
 ## Notes
 - The FIRST account registered on the new site becomes the **🛠 CREATOR** (that's you).
 - Your old data from this laptop isn't transferred automatically — re-register and re-add homework, or ask me and I'll write a data-import tool.

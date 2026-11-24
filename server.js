@@ -43,6 +43,8 @@ if (process.env.DATABASE_URL) {
       task TEXT DEFAULT '',
       given TEXT DEFAULT '',
       due TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      priority INTEGER DEFAULT 0,
       done INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS settings (
@@ -69,6 +71,8 @@ if (process.env.DATABASE_URL) {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'uz'");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bgcolor TEXT DEFAULT ''");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS accent TEXT DEFAULT ''");
+  await pool.query("ALTER TABLE homework ADD COLUMN IF NOT EXISTS note TEXT DEFAULT ''");
+  await pool.query("ALTER TABLE homework ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0");
 } else {
   const { DatabaseSync } = await import("node:sqlite");
   const fs = await import("node:fs");
@@ -96,7 +100,7 @@ if (process.env.DATABASE_URL) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL, year TEXT NOT NULL,
       subject TEXT DEFAULT '', task TEXT DEFAULT '',
-      given TEXT DEFAULT '', due TEXT DEFAULT '', done INTEGER DEFAULT 0
+      given TEXT DEFAULT '', due TEXT DEFAULT '', note TEXT DEFAULT '', priority INTEGER DEFAULT 0, done INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE IF NOT EXISTS announcement_log (
@@ -114,6 +118,9 @@ if (process.env.DATABASE_URL) {
   `);
   for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'", "lang TEXT DEFAULT 'uz'", "bgcolor TEXT DEFAULT ''", "accent TEXT DEFAULT ''"]) {
     try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
+  }
+  for (const col of ["note TEXT DEFAULT ''", "priority INTEGER DEFAULT 0"]) {
+    try { db.exec(`ALTER TABLE homework ADD COLUMN ${col}`); } catch {}
   }
   q = (sql, p = []) => db.prepare(sql).all(...p);
   run = (sql, p = []) => {
@@ -347,9 +354,10 @@ app.get("/api/homework", async (req, res) => {
 app.post("/api/homework", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  const { year, subject, task, given, due } = req.body || {};
-  const info = await run("INSERT INTO homework (user_id, year, subject, task, given, due) VALUES (?,?,?,?,?,?)",
-    [user.id, year, subject || "", task || "", given || "", due || ""]);
+  const { year, subject, task, given, due, note, priority } = req.body || {};
+  const prio = Math.max(0, Math.min(2, Number(priority) || 0));
+  const info = await run("INSERT INTO homework (user_id, year, subject, task, given, due, note, priority) VALUES (?,?,?,?,?,?,?,?)",
+    [user.id, year, subject || "", task || "", given || "", due || "", String(note || "").slice(0, 300), prio]);
   await track(user.id, `added ${subject || "new"} homework`);
   res.json({ id: info.lastInsertRowid });
 });
@@ -372,6 +380,35 @@ app.post("/api/homework/clear-done", async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post("/api/homework/delete-many", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const ids = Array.isArray((req.body || {}).ids) ? req.body.ids.slice(0, 300) : [];
+  const clean = ids.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
+  if (!clean.length) return res.json({ ok: true, deleted: 0 });
+  const marks = clean.map(() => "?").join(",");
+  const found = await q(`SELECT COUNT(*) AS n FROM homework WHERE user_id = ? AND id IN (${marks})`, [user.id, ...clean]);
+  await run(`DELETE FROM homework WHERE user_id = ? AND id IN (${marks})`, [user.id, ...clean]);
+  await track(user.id, `deleted ${Number(found[0]?.n) || clean.length} homework item(s)`);
+  res.json({ ok: true, deleted: Number(found[0]?.n) || 0 });
+});
+
+app.get("/api/leaderboard", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const list = await q(`
+    SELECT u.id, u.username, u.role, u.avatar,
+           COUNT(h.id) AS total,
+           COALESCE(SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END), 0) AS done
+    FROM users u LEFT JOIN homework h ON h.user_id = u.id AND h.year = '2026-27'
+    GROUP BY u.id, u.username, u.role, u.avatar
+    ORDER BY done DESC, total DESC, u.username ASC`);
+  res.json(list.map(r => ({
+    id: r.id, username: r.username, role: r.role, avatar: r.avatar || "",
+    done: Number(r.done) || 0, total: Number(r.total) || 0
+  })));
+});
+
 app.patch("/api/homework/:id", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
@@ -379,9 +416,12 @@ app.patch("/api/homework/:id", async (req, res) => {
   const row = rows[0];
   if (!row) return res.status(404).json({ error: "Not found" });
   const b = req.body || {};
-  await run("UPDATE homework SET subject=?, task=?, given=?, due=?, done=? WHERE id=?",
+  await run("UPDATE homework SET subject=?, task=?, given=?, due=?, done=?, note=?, priority=? WHERE id=?",
     [b.subject ?? row.subject, b.task ?? row.task, b.given ?? row.given, b.due ?? row.due,
-     ("done" in b ? (b.done ? 1 : 0) : row.done), row.id]);
+     ("done" in b ? (b.done ? 1 : 0) : row.done),
+     ("note" in b ? String(b.note || "").slice(0, 300) : (row.note || "")),
+     ("priority" in b ? Math.max(0, Math.min(2, Number(b.priority) || 0)) : (Number(row.priority) || 0)),
+     row.id]);
   if ("done" in b) await track(user.id, (b.done ? "✅ done" : "↩ undone") + ` ${row.subject || ""} homework`);
   res.json({ ok: true });
 });
@@ -417,6 +457,135 @@ app.delete("/api/members/:id", async (req, res) => {
   await run("DELETE FROM sessions WHERE user_id = ?", [req.params.id]);
   await run("DELETE FROM users WHERE id = ?", [req.params.id]);
   res.json({ ok: true });
+});
+
+/* ---------------- AI ASSISTANT ---------------- */
+const AI_LANG_NAMES = { uz: "Uzbek (Latin)", en: "English", ru: "Russian", ar: "Arabic", es: "Spanish", fr: "French" };
+
+function aiIntent(text) {
+  const s = String(text || "").toLowerCase();
+  const has = (words) => words.some(w => s.includes(w));
+  if (!s.trim()) return "help";
+  if (has(["plan", "reja", "rejalashtir", "план", "расписан", "خطة", "планир", "planifi", "horario", "jadval"])) return "plan";
+  if (has(["overdue", "muddati o", "просроч", "متأخر", "atrasad", "retard"])) return "overdue";
+  if (has(["tomorrow", "ertaga", "завтра", "غدا", "غدًا", "mañana", "demain"])) return "tomorrow";
+  if (has(["left", "qoldi", "qolgan", "nima bor", "остал", "متبق", "pendient", "queda", "restant", "à faire"])) return "left";
+  if (has(["tip", "maslahat", "совет", "نصيحة", "consejo", "conseil", "qanday o‘qish", "how to study"])) return "tips";
+  if (has(["motiv", "ruhlantir", "мотив", "تحفيز", "motivación", "motivation"])) return "motivation";
+  if (has(["help", "yordam", "помощь", "مساعدة", "ayuda", "aide", "nima qila olasan"])) return "help";
+  if (has(["hi", "hello", "salom", "assalom", "привет", "здравств", "مرحبا", "السلام", "hola", "bonjour"])) return "greeting";
+  return "summary";
+}
+
+app.post("/api/ai/chat", async (req, res) => {
+  const user = await authUser(req);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const body = req.body || {};
+  const lang = ["uz", "en", "ru", "ar", "es", "fr"].includes(body.lang) ? body.lang : "en";
+  const history = (Array.isArray(body.messages) ? body.messages : [])
+    .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+    .slice(-12)
+    .map(m => ({ role: m.role, content: m.content.slice(0, 1500) }));
+  const lastUser = [...history].reverse().find(m => m.role === "user")?.content || "";
+
+  const all = await q("SELECT id, subject, task, due, priority, done FROM homework WHERE user_id = ? AND year = '2026-27' ORDER BY id", [user.id]);
+  const rows = all.map(r => ({
+    id: r.id, subject: r.subject || "", task: r.task || "", due: r.due || "",
+    priority: Number(r.priority) || 0, done: !!r.done
+  }));
+  const now = new Date();
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const today = iso(now);
+  const tomorrow = iso(new Date(now.getTime() + 86400000));
+  const pending = rows.filter(r => !r.done);
+  const overdue = pending.filter(r => r.due && r.due < today);
+  const dueTomorrow = pending.filter(r => r.due === tomorrow);
+  const todayDue = pending.filter(r => r.due === today);
+  const byDue = (a, b) => (a.due || "9999-12-31").localeCompare(b.due || "9999-12-31");
+  pending.sort((a, b) => (b.priority - a.priority) || byDue(a, b));
+  overdue.sort(byDue);
+  dueTomorrow.sort((a, b) => b.priority - a.priority);
+  todayDue.sort((a, b) => b.priority - a.priority);
+
+  const counts = { done: rows.filter(r => r.done).length, total: rows.length, pending: pending.length, overdue: overdue.length };
+
+  // 7-day plan: overdue -> today, unscheduled -> spread over the next days
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getTime() + i * 86400000);
+    days.push({ date: iso(d), items: [] });
+  }
+  const unscheduled = [];
+  for (const r of pending) {
+    if (r.due) {
+      const slot = days.find(d => d.date === r.due) || days[0];
+      slot.items.push(r);
+    } else {
+      unscheduled.push(r);
+    }
+  }
+  unscheduled.forEach((r, i) => {
+    const open = days.slice().sort((a, b) => a.items.length - b.items.length)[i % 7];
+    open.items.push(r);
+  });
+
+  const kind = ({ motivate: "motivation" })[body.hint] || (["left", "plan", "tomorrow", "overdue", "tips", "motivation", "summary", "help", "greeting"].includes(body.hint) ? body.hint : aiIntent(lastUser));
+
+  // Optional real LLM (OpenAI-compatible). Set AI_API_KEY / OPENAI_API_KEY to enable.
+  const key = process.env.AI_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || "";
+  if (key) {
+    const base = process.env.AI_BASE_URL
+      || (process.env.OPENROUTER_API_KEY && !process.env.AI_API_KEY ? "https://openrouter.ai/api/v1" : "https://api.openai.com/v1");
+    const model = process.env.AI_MODEL || "gpt-4o-mini";
+    const context = {
+      today, tomorrow,
+      counts,
+      pending: pending.slice(0, 40).map(r => ({ subject: r.subject, task: r.task, due: r.due, priority: r.priority })),
+      overdue: overdue.slice(0, 20).map(r => ({ subject: r.subject, task: r.task, due: r.due })),
+      dueTomorrow: dueTomorrow.slice(0, 20).map(r => ({ subject: r.subject, task: r.task }))
+    };
+    const system = `You are a friendly homework assistant for a class 7-01 student named ${user.username}.
+Today is ${today}. Answer in ${AI_LANG_NAMES[lang]}. Be concise (max 130 words), practical and encouraging.
+Only use the student's real data below; never invent homework. Use short bullet lines when listing tasks.
+If asked for a plan, organise the next 7 days realistically (2-4 short study blocks per day).
+Student data JSON: ${JSON.stringify(context)}`;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000);
+      const r = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model,
+          temperature: 0.4,
+          max_tokens: 450,
+          messages: [{ role: "system", content: system }, ...history]
+        }),
+        signal: ctrl.signal
+      });
+      clearTimeout(timer);
+      if (r.ok) {
+        const data = await r.json();
+        const text = data?.choices?.[0]?.message?.content;
+        if (typeof text === "string" && text.trim()) {
+          return res.json({ source: "ai", kind, reply: text.trim(), counts });
+        }
+      }
+    } catch (e) {
+      // fall through to the built-in assistant
+    }
+  }
+
+  res.json({
+    source: "smart",
+    kind,
+    counts,
+    data: {
+      items: (kind === "overdue" ? overdue : kind === "tomorrow" ? dueTomorrow : pending).slice(0, 20),
+      days,
+      today, tomorrow
+    }
+  });
 });
 
 app.listen(PORT, () => console.log(`✅ Homework Tracker running at http://localhost:${PORT}`));

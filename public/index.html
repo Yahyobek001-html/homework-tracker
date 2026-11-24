@@ -128,8 +128,8 @@
   td input[type=date] { color-scheme:dark; }
   td input[type=checkbox] { width:19px; height:19px; cursor:pointer; accent-color:#3ddc97; }
   tr.done td { opacity:.45; }
-  tr.done td:nth-child(1) input[type=text], tr.done td:nth-child(2) input[type=text] { text-decoration:line-through; }
-  tr.done td:nth-last-child(-n+2) { opacity:1; }
+  tr.done td:nth-child(2) input[type=text], tr.done td:nth-child(3) input[type=text] { text-decoration:line-through; }
+  tr.done td:nth-last-child(-n+3) { opacity:1; }
 
   #app { display:none; }
   .section-title { display:flex; align-items:center; gap:.5rem; }
@@ -169,6 +169,146 @@
   .upcoming .urow { display:flex; justify-content:space-between; gap:.6rem; padding:.3rem 0;
                     border-bottom:1px dashed #ffffff12; font-size:.86rem; }
   .upcoming .urow:last-child { border-bottom:none; }
+
+  /* ---- priority, notes, selection ---- */
+  .prio { border:none; width:28px; height:28px; border-radius:9px; cursor:pointer; font-size:.72rem; font-weight:900;
+          display:inline-flex; align-items:center; justify-content:center; padding:0; box-shadow:none; }
+  .prio.p0 { background:rgba(255,255,255,.08); color:var(--dim); }
+  .prio.p1 { background:#ffcc5c26; color:var(--gold); }
+  .prio.p2 { background:#ff6b6b2b; color:#ff8f8f; }
+  tr.prio-1 td:nth-child(2) { box-shadow: inset 3px 0 0 #ffcc5c; }
+  tr.prio-2 td:nth-child(2) { box-shadow: inset 3px 0 0 var(--red); }
+  .note { font-size:.73rem; color:var(--dim); margin-top:.2rem; line-height:1.35;
+          overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .rowacts { display:flex; gap:.05rem; justify-content:flex-end; }
+  .iconbtn { background:transparent; color:var(--dim); box-shadow:none; padding:.28rem .35rem; font-size:.92rem; border-radius:8px; }
+  .iconbtn:hover { color:var(--txt); background:rgba(255,255,255,.08); }
+  .hwtablewrap { overflow-x:auto; border-radius:16px; }
+  #viewHw table { min-width:760px; }
+  .bulkbtn { background:linear-gradient(135deg,#ff6b6b,#e03434) !important; box-shadow:none !important; }
+
+  /* ---- subject progress ---- */
+  .subjprog { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.5rem; margin:.6rem 0 1rem; }
+  .subjitem { background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:.55rem .75rem; }
+  .subjitem .pc { display:flex; justify-content:space-between; gap:.4rem; font-size:.8rem; margin-bottom:.35rem; }
+  .subjitem .pc b { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .subjitem .track { height:7px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .subjitem .fill { height:100%; background:var(--grad); border-radius:999px; transition:width .5s; }
+
+  /* ---- calendar ---- */
+  .calhead { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin:.4rem 0 .8rem; flex-wrap:wrap; }
+  .calhead b { font-size:1.05rem; text-transform:capitalize; }
+  .calhead .ctl { display:flex; gap:.4rem; align-items:center; }
+  .calhead .ctl button { padding:.35rem .7rem; }
+  .calgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:.3rem; }
+  .caldow { text-align:center; font-size:.7rem; font-weight:800; color:var(--dim); padding:.25rem 0;
+            text-transform:uppercase; letter-spacing:.4px; }
+  .calcell { min-height:66px; border-radius:12px; border:1px solid var(--stroke); background:var(--card);
+             padding:.32rem .38rem; cursor:pointer; transition:background .15s, border-color .15s, transform .15s; }
+  .calcell:hover { background:rgba(255,255,255,.08); transform:translateY(-1px); }
+  .calcell.out { opacity:.35; }
+  .calcell.today { border-color:var(--blue); box-shadow:0 0 0 2px #6d8dff33; }
+  .calcell.sel { background:var(--grad-soft); border-color:var(--blue); }
+  .calcell .dnum { font-size:.76rem; font-weight:800; }
+  .calcell .dots { display:flex; gap:3px; flex-wrap:wrap; margin-top:.3rem; align-items:center; }
+  .calcell .dot { width:7px; height:7px; border-radius:50%; background:var(--blue); }
+  .calcell .dot.hi { background:var(--red); }
+  .calcell .dot.mid { background:var(--gold); }
+  .calcell .more { font-size:.63rem; color:var(--dim); }
+  .calday { margin-top:.9rem; }
+  .calday h4 { font-size:.95rem; margin-bottom:.4rem; }
+  .calday .cdrow { display:flex; justify-content:space-between; gap:.6rem; padding:.4rem .7rem;
+                   border-radius:10px; background:var(--card); border:1px solid var(--stroke); margin-bottom:.35rem; font-size:.86rem; }
+  .calday .cdrow.done { opacity:.5; text-decoration:line-through; }
+
+  /* ---- rating ---- */
+  .rank { display:flex; align-items:center; gap:.65rem; background:var(--card); border:1px solid var(--stroke);
+          border-radius:14px; padding:.6rem .8rem; margin-bottom:.45rem; }
+  .rank.top1 { background:var(--grad-soft); border-color:transparent; }
+  .rank .pos { width:36px; text-align:center; font-weight:900; font-size:1rem; color:var(--dim); }
+  .rank .nm { flex:1; min-width:0; }
+  .rank .nm b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.92rem; }
+  .rank .nm small { color:var(--dim); font-size:.75rem; }
+  .rank .rbar { width:100px; height:6px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .rank .rbar > div { height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); border-radius:999px; }
+  .rank .score { font-weight:900; color:var(--green); font-size:1.05rem; min-width:42px; text-align:right; }
+
+  /* ---- floating AI + focus ---- */
+  .fab { position:fixed; right:1.1rem; bottom:1.1rem; z-index:60; width:56px; height:56px; border-radius:50%;
+         background:var(--grad); box-shadow:0 12px 30px -8px var(--blue); font-size:1.5rem; display:flex;
+         align-items:center; justify-content:center; border:none; cursor:pointer; color:#fff; }
+  .fab:hover { transform:scale(1.07); }
+  .fab.focus { bottom:5.1rem; width:46px; height:46px; font-size:1.15rem; background:var(--card);
+               border:1px solid var(--stroke); color:var(--txt); box-shadow:var(--shadow); }
+  html[dir="rtl"] .fab { right:auto; left:1.1rem; }
+
+  .aipanel { position:fixed; right:1.1rem; bottom:5.3rem; width:min(370px, calc(100vw - 2.2rem));
+             height:min(540px, calc(100vh - 7rem)); background:linear-gradient(160deg,#161c2e,#10141f); color:#eef2ff;
+             border:1px solid var(--stroke); border-radius:20px; box-shadow:0 30px 80px -20px #000; z-index:61;
+             display:none; flex-direction:column; overflow:hidden; }
+  .aipanel.show { display:flex; animation:pop .25s ease-out both; }
+  .aihead { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.75rem .9rem;
+            border-bottom:1px solid var(--stroke); }
+  .aihead b { font-size:.96rem; }
+  .aihead small { display:block; color:#97a3c4; font-size:.7rem; font-weight:400; margin-top:.1rem; }
+  .aihead .aibtns { display:flex; gap:.15rem; }
+  .aihead button { background:transparent; box-shadow:none; color:#97a3c4; padding:.25rem .4rem; }
+  .aihead button:hover { color:#fff; }
+  .aichips { display:flex; gap:.35rem; flex-wrap:wrap; padding:.5rem .6rem 0; }
+  .aichip { background:rgba(255,255,255,.06); border:1px solid var(--stroke); color:#eef2ff;
+            border-radius:999px; padding:.3rem .6rem; font-size:.72rem; cursor:pointer; }
+  .aichip:hover { background:rgba(109,141,255,.22); }
+  .aimsgs { flex:1; overflow:auto; padding:.7rem; display:flex; flex-direction:column; gap:.55rem; }
+  .aimsg { max-width:89%; padding:.55rem .75rem; border-radius:14px; font-size:.86rem; line-height:1.5;
+           white-space:pre-wrap; word-wrap:break-word; }
+  .aimsg.user { align-self:flex-end; background:var(--grad); color:#fff; border-bottom-right-radius:5px; }
+  .aimsg.bot { align-self:flex-start; background:rgba(255,255,255,.07); border:1px solid var(--stroke); border-bottom-left-radius:5px; }
+  .aimsg ul { margin:.3rem 0 .1rem 1rem; }
+  .aimsg li { margin:.18rem 0; }
+  .aimsg .src { display:block; margin-top:.3rem; font-size:.64rem; color:#97a3c4; }
+  .aityping { align-self:flex-start; color:#97a3c4; font-size:.8rem; }
+  .airow { display:flex; gap:.35rem; padding:.55rem; border-top:1px solid var(--stroke); }
+  .airow input { flex:1; width:auto; background:rgba(255,255,255,.08); color:#eef2ff; border:1px solid var(--stroke); }
+  .airow button { padding:.5rem .8rem; }
+
+  .focusbox { position:fixed; right:1.1rem; bottom:5.3rem; width:min(300px, calc(100vw - 2.2rem)); z-index:61;
+              background:linear-gradient(160deg,#161c2e,#10141f); color:#eef2ff; border:1px solid var(--stroke);
+              border-radius:18px; padding:1rem; box-shadow:0 30px 80px -20px #000; display:none; }
+  .focusbox.show { display:block; animation:pop .25s ease-out both; }
+  .focusbox h4 { font-size:.95rem; margin-bottom:.55rem; }
+  .focusbox select { width:100%; max-width:none; margin-bottom:.5rem; background:rgba(255,255,255,.08); color:#eef2ff; }
+  .focusTime { font-size:2.5rem; font-weight:900; text-align:center; letter-spacing:1px; color:var(--blue);
+               font-variant-numeric:tabular-nums; margin:.2rem 0 .45rem; }
+  .focusrow { display:flex; gap:.4rem; }
+  .focusrow button { flex:1; }
+  .focusmin { font-size:.76rem; color:#97a3c4; text-align:center; margin-top:.55rem; }
+
+  .toast { position:fixed; left:50%; top:1.1rem; transform:translateX(-50%); z-index:200;
+           background:#161c2e; color:#eef2ff; border:1px solid var(--stroke); border-radius:12px;
+           padding:.6rem 1rem; font-size:.86rem; box-shadow:var(--shadow); animation:pop .25s ease-out both; }
+
+  @media (max-width:700px) {
+    .topbar { flex-direction:column; align-items:flex-start; gap:.5rem; }
+    .topbar .right { flex-wrap:wrap; }
+    .calcell { min-height:52px; }
+    .rank .rbar { display:none; }
+    .aipanel { right:.6rem; left:.6rem; width:auto; bottom:5rem; }
+    .focusbox { right:.6rem; left:.6rem; width:auto; }
+  }
+
+  @media print {
+    body { background:#fff !important; color:#000 !important; padding:0 !important; }
+    body * { visibility:hidden; }
+    #viewHw, #viewHw * { visibility:visible; }
+    #viewHw { position:absolute; left:0; top:0; width:100%; display:block !important; }
+    .hwbar, .add, .achbox, .ringwrap, #subjectBars, .topbar, .tabs, #ownerPanel,
+    #announcementBox, .fab, .aipanel, .focusbox, .iconbtn, th:first-child, td:first-child,
+    th:last-child, td:last-child { display:none !important; }
+    table { box-shadow:none; border-color:#bbb; background:#fff; color:#000; min-width:0 !important; }
+    th { background:#eee; color:#000; }
+    td input { color:#000 !important; }
+    tr.done td { opacity:1; }
+  }
 
   /* language */
   select.langsel { background:rgba(255,255,255,.06); color:var(--txt); border:1px solid var(--stroke);
@@ -253,6 +393,7 @@
       <span id="myAvatar"></span>
       <span id="who"></span>
       <select class="langsel" id="langSelTop" onchange="pickLang(this.value)" title="Language"></select>
+      <button class="secondary" id="themeModeBtn" onclick="toggleThemeMode()" title="Toggle light / dark">🌙</button>
       <button class="secondary" onclick="openSettings()" data-i18n="nav.settings">⚙ Settings</button>
       <button class="secondary" onclick="logout()" data-i18n="nav.logout">Log out</button>
     </div>
@@ -279,6 +420,8 @@
     <button id="tabToday" class="active" onclick="tab('today')" data-i18n="tab.today">📅 Today</button>
     <button id="tabTomorrow" onclick="tab('tomorrow')" data-i18n="tab.tomorrow">⏭ Tomorrow</button>
     <button id="tabHw" onclick="tab('hw')" data-i18n="tab.hw">📝 All Homework</button>
+    <button id="tabCalendar" onclick="tab('calendar')" data-i18n="tab.calendar">📅 Calendar</button>
+    <button id="tabRating" onclick="tab('rating')" data-i18n="tab.rating">🏆 Rating</button>
     <button id="tabClass" onclick="tab('class')" data-i18n="tab.class">🏫 Class Info</button>
     <button id="tabMembers" onclick="tab('members')" style="display:none" data-i18n="tab.members">👥 Members</button>
   </div>
@@ -307,6 +450,7 @@
     <h2 data-i18n="hw.year">Academic Year 2026-27</h2>
     <div class="ringwrap" id="ringWrap"></div>
     <div class="statgrid" id="hwStats"></div>
+    <div class="subjprog" id="subjectBars"></div>
     <div class="hwbar">
       <input id="hwSearch" data-i18n-ph="hw.search" placeholder="🔍 Search homework…" oninput="setHwFilter({q:this.value})">
       <select id="hwStatus" class="langsel" onchange="setHwFilter({f:this.value})">
@@ -314,30 +458,59 @@
         <option value="pending" data-i18n="hw.filter.pending">Pending</option>
         <option value="done" data-i18n="hw.filter.done">Done</option>
         <option value="overdue" data-i18n="hw.filter.overdue">Overdue</option>
+        <option value="high" data-i18n="hw.filter.high">High priority</option>
       </select>
       <select id="hwSort" class="langsel" onchange="setHwFilter({s:this.value})">
         <option value="due" data-i18n="hw.sort.due">By due date</option>
         <option value="subject" data-i18n="hw.sort.subject">By subject</option>
+        <option value="priority" data-i18n="hw.sort.priority">By priority</option>
         <option value="new" data-i18n="hw.sort.new">Newest first</option>
       </select>
       <button class="secondary" onclick="markAllDone()" data-i18n="hw.markAll">✓ Mark all done</button>
       <button class="secondary" onclick="exportCsv()" data-i18n="hw.export">⬇ Export CSV</button>
+      <button class="secondary" onclick="printHw()" data-i18n="hw.print">🖨 Print</button>
       <button class="secondary" onclick="clearDone()" data-i18n="hw.clearDone">🧹 Clear done</button>
+      <button class="bulkbtn" id="bulkDelBtn" style="display:none" onclick="deleteSelected()">🗑</button>
     </div>
+    <div class="hwtablewrap">
     <table>
       <thead><tr>
+        <th style="width:34px"><input type="checkbox" id="selAll" onchange="toggleSelectAll(this.checked)"></th>
         <th data-i18n="th.subject">Subject</th>
         <th data-i18n="th.task">Homework</th>
         <th data-i18n="th.given">Date Given</th>
         <th data-i18n="th.due">Due</th>
+        <th style="width:44px" data-i18n="th.priority">!</th>
         <th data-i18n="th.done">Done ✓</th>
-        <th></th>
+        <th style="width:104px"></th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
+    </div>
     <div id="hwEmpty" class="stats" style="display:none;text-align:center;padding:1rem" data-i18n="hw.empty">No homework matches your filters.</div>
     <div id="achBox" class="achbox"></div>
     <button class="add" onclick="addRow()" data-i18n="hw.add">+ Add Homework</button>
+  </div>
+
+  <div id="viewCalendar" style="display:none">
+    <h2 data-i18n="cal.title">📅 Homework calendar</h2>
+    <p class="stats" data-i18n="cal.legend">Coloured dots mark days with homework due. Click a day to see it.</p>
+    <div class="calhead">
+      <button class="secondary" onclick="calShift(-1)" title="Previous">‹</button>
+      <b id="calTitle"></b>
+      <div class="ctl">
+        <button class="secondary" onclick="calToday()" data-i18n="cal.today">Today</button>
+        <button class="secondary" onclick="calShift(1)" title="Next">›</button>
+      </div>
+    </div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="calday" id="calDay"></div>
+  </div>
+
+  <div id="viewRating" style="display:none">
+    <h2 data-i18n="rating.title">🏆 Class rating</h2>
+    <p class="stats" data-i18n="rating.sub">Ranking by completed homework. Only counts are shown, not private tasks.</p>
+    <div id="ratingList"></div>
   </div>
 
   <div id="viewMembers" style="display:none">
@@ -441,6 +614,40 @@
   </div>
 </div>
 
+<!-- AI ASSISTANT + FOCUS TIMER -->
+<button class="fab focus" id="focusFab" onclick="toggleFocus()" title="Focus timer">⏱</button>
+<button class="fab" id="aiFab" onclick="toggleAI()" title="AI Assistant">🤖</button>
+
+<div class="aipanel" id="aiPanel">
+  <div class="aihead">
+    <div>
+      <b data-i18n="ai.title">🤖 AI Assistant</b>
+      <small data-i18n="ai.sub">Ask about your homework, deadlines or a study plan.</small>
+    </div>
+    <div class="aibtns">
+      <button onclick="clearAI()" title="Clear chat">🧹</button>
+      <button onclick="toggleAI(false)" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="aichips" id="aiChips"></div>
+  <div class="aimsgs" id="aiMsgs"></div>
+  <div class="airow">
+    <input id="aiInput" data-i18n-ph="ai.placeholder" placeholder="Ask me anything…" onkeydown="if(event.key==='Enter')aiSend()">
+    <button onclick="aiSend()" data-i18n="ai.send">Send</button>
+  </div>
+</div>
+
+<div class="focusbox" id="focusBox">
+  <h4 data-i18n="focus.title">⏱ Focus timer</h4>
+  <select id="focusSubject" class="langsel"></select>
+  <div class="focusTime" id="focusTime">25:00</div>
+  <div class="focusrow">
+    <button id="focusStartBtn" onclick="focusToggle()" data-i18n="focus.start">Start</button>
+    <button class="secondary" onclick="focusReset()" data-i18n="focus.reset">Reset</button>
+  </div>
+  <div class="focusmin" id="focusMinutes"></div>
+</div>
+
 <script src="i18n.js"></script>
 <script>
 // Timetable (from your class schedule) — edit freely
@@ -469,6 +676,10 @@ const TIMETABLE = {
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 let me = null, rows = [], currentTab = 'today', lastAnn = null, anonLangPick = null;
+let selectedIds = new Set();
+let calCursor = new Date(), calSel = null;
+let focusState = { left: 25 * 60, total: 25 * 60, running: false, timer: null };
+let aiHistory = [], aiBusy = false;
 
 /* ---------- LANGUAGE ---------- */
 function fillLangSelects(){
@@ -494,10 +705,15 @@ function applyLang(l, rerender = true){
     renderToday(); renderHw();
     if (viewTomorrow.style.display !== 'none') renderTomorrow();
     if (viewClass.style.display !== 'none') renderClassInfo();
+    if (viewCalendar.style.display !== 'none') renderCalendar();
+    if (viewRating.style.display !== 'none') renderRating();
+    if (aiPanel.classList.contains('show')) renderAIChips();
+    if (focusBox.classList.contains('show')) renderFocusSubjects();
     if (lastMembers.length) filterMembers();
     if (lastAnn) showAnnouncement(lastAnn);
     if (activityBox && activityBox.style.display !== 'none') loadActivity();
     if (annHistory && annHistory.style.display !== 'none') loadHistory();
+    syncThemeModeBtn();
   }
 }
 
@@ -553,27 +769,22 @@ async function init(){
   applyFontSize(fs, true);
   renderSwatches();
   renderToday(); renderHw(); renderMembers();
+  renderFocusSubjects(); renderAIChips(); syncThemeModeBtn();
   localStorage.setItem('ht_session', '1');
   api('/api/ping', { method: 'POST' }).catch(() => {});
 }
 
 function tab(t){
   currentTab = t;
-  ['Today','Hw','Members'].forEach(x=>{
-    document.getElementById('tab'+x).classList.toggle('active', ('tab'+x).toLowerCase() === 'tab'+t || (t==='hw'&&x==='Hw'));
-  });
-  tabToday.classList.toggle('active', t==='today');
-  tabTomorrow.classList.toggle('active', t==='tomorrow');
-  tabHw.classList.toggle('active', t==='hw');
-  tabClass.classList.toggle('active', t==='class');
-  tabMembers.classList.toggle('active', t==='members');
-  viewToday.style.display = t==='today'?'':'none';
-  viewTomorrow.style.display = t==='tomorrow'?'':'none';
-  viewHw.style.display = t==='hw'?'':'none';
-  viewClass.style.display = t==='class'?'':'none';
-  viewMembers.style.display = t==='members'?'':'none';
-  if (t==='tomorrow') renderTomorrow();
-  if (t==='class') renderClassInfo();
+  const tabs = { today: tabToday, tomorrow: tabTomorrow, hw: tabHw, calendar: tabCalendar, rating: tabRating, class: tabClass, members: tabMembers };
+  Object.entries(tabs).forEach(([k, el]) => el.classList.toggle('active', k === t));
+  const views = { today: viewToday, tomorrow: viewTomorrow, hw: viewHw, calendar: viewCalendar, rating: viewRating, class: viewClass, members: viewMembers };
+  Object.entries(views).forEach(([k, el]) => { el.style.display = k === t ? '' : 'none'; });
+  if (t === 'tomorrow') renderTomorrow();
+  if (t === 'class') renderClassInfo();
+  if (t === 'calendar') renderCalendar();
+  if (t === 'rating') renderRating();
+  if (t === 'hw') renderSubjectBars();
 }
 
 function todayName(){ return DAYS[new Date().getDay()]; }
@@ -605,10 +816,10 @@ function renderTomorrow(){
   const d = new Date(); d.setDate(d.getDate() + 1);
   tomorrowTitle.textContent = t('tomorrow.title', { day: dayName(dayIdx), date: d.toLocaleDateString(localeOf()) });
   const items = TIMETABLE[day] || [];
-  const today = new Date().toISOString().slice(0,10);
+  const today = isoToday();
 
   const overdue = rows.filter(r=>!r.done && r.due && r.due < today);
-  const dueTomorrow = rows.filter(r=>!r.done && r.due === d.toISOString().slice(0,10));
+  const dueTomorrow = rows.filter(r=>!r.done && r.due === localIso(d));
   overdueBox.innerHTML = (overdue.length || dueTomorrow.length) ? (
     (overdue.length ? `<div class="period" style="border-left-color:#f85149"><div><b style="color:#f85149">${t('overdue',{n:overdue.length})}</b><br>${overdue.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '') +
     (dueTomorrow.length ? `<div class="period" style="border-left-color:#f0b429"><div><b style="color:#f0b429">${t('due.tomorrow',{n:dueTomorrow.length})}</b><br>${dueTomorrow.map(r=>esc(r.subject)+': '+esc(r.task)).join('<br>')}</div></div>` : '')
@@ -669,7 +880,7 @@ function renderClassInfo(){
 async function quickAdd(subj){
   const task = prompt(t('quickadd', { subject: subjectName(subj) }));
   if (!task) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = isoToday();
   await api('/api/homework',{method:'POST',body:JSON.stringify({year:'2026-27',subject:subj,task,given:today})});
   rows = await api('/api/homework');
   renderToday(); renderHw(); if (currentTab==='tomorrow') renderTomorrow();
@@ -677,7 +888,11 @@ async function quickAdd(subj){
 
 let hwQuery = '', hwFilter = 'all', hwSort = 'due';
 
-function isoToday(){ return new Date().toISOString().slice(0,10); }
+function localIso(d){
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function isoToday(){ return localIso(new Date()); }
 function daysUntil(dateStr){
   const a = new Date(dateStr + 'T00:00:00');
   const b = new Date(isoToday() + 'T00:00:00');
@@ -706,8 +921,10 @@ function visibleHw(){
   if (hwFilter === 'pending') out = out.filter(r=>!r.done);
   else if (hwFilter === 'done') out = out.filter(r=>r.done);
   else if (hwFilter === 'overdue') out = out.filter(r=>!r.done && r.due && daysUntil(r.due) < 0);
+  else if (hwFilter === 'high') out = out.filter(r => Number(r.priority) === 2);
   if (hwSort === 'due') out.sort((a,b)=>(a.due||'9999-12-31').localeCompare(b.due||'9999-12-31'));
   else if (hwSort === 'subject') out.sort((a,b)=>(a.subject||'').localeCompare(b.subject||''));
+  else if (hwSort === 'priority') out.sort((a,b)=>(Number(b.priority)||0)-(Number(a.priority)||0) || (a.due||'9999-12-31').localeCompare(b.due||'9999-12-31'));
   else out.sort((a,b)=> b.id - a.id);
   return out;
 }
@@ -755,17 +972,33 @@ function renderHw(){
     <div class="statcard today"><b>${dueToday}</b><small>${t('hw.stats.today')}</small></div>`;
 
   const shown = visibleHw();
-  document.getElementById('rows').innerHTML = shown.map(r=>`
-    <tr class="${r.done?'done':''}">
+  document.getElementById('rows').innerHTML = shown.map(r=>{
+    const p = Number(r.priority) || 0;
+    return `
+    <tr class="${r.done?'done':''} prio-${p}">
+      <td><input type="checkbox" class="rowsel" ${selectedIds.has(r.id)?'checked':''} onchange="toggleSel(${r.id},this.checked)"></td>
       <td><input type="text" value="${esc(r.subject)}" onchange="saveRow(${r.id},'subject',this.value)" placeholder="${t('ph.subject')}"></td>
-      <td><input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="${t('ph.task')}"></td>
+      <td>
+        <input type="text" value="${esc(r.task)}" onchange="saveRow(${r.id},'task',this.value)" placeholder="${t('ph.task')}">
+        ${r.note ? `<div class="note" title="${escHtml(r.note)}">📝 ${escHtml(r.note)}</div>` : ''}
+      </td>
       <td><input type="date" value="${r.given}" onchange="saveRow(${r.id},'given',this.value)"></td>
       <td><input type="date" value="${r.due}" onchange="saveRow(${r.id},'due',this.value)">${dueBadge(r)}</td>
+      <td style="text-align:center"><button class="prio p${p}" onclick="cyclePriority(${r.id})" title="${t('prio.cycle')}">${p===0?'•':p===1?'!':'!!'}</button></td>
       <td style="text-align:center"><input type="checkbox" ${r.done?'checked':''} onchange="toggleDone(${r.id},this.checked)"></td>
-      <td><button class="del" onclick="delRow(${r.id})">✕</button></td>
-    </tr>`).join('');
+      <td><div class="rowacts">
+        <button class="iconbtn" onclick="editNote(${r.id})" title="${t('note.add')}">${r.note?'📝':'🗒️'}</button>
+        <button class="iconbtn" onclick="duplicateRow(${r.id})" title="${t('hw.duplicate')}">⧉</button>
+        <button class="iconbtn" onclick="delRow(${r.id})" title="${t('hw.delete')}">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
   const emptyEl = document.getElementById('hwEmpty');
   if (emptyEl) emptyEl.style.display = shown.length ? 'none' : '';
+  const selAll = document.getElementById('selAll');
+  if (selAll) selAll.checked = shown.length > 0 && shown.every(r => selectedIds.has(r.id));
+  renderSubjectBars();
+  updateBulkBar();
   renderAch();
 }
 
@@ -787,6 +1020,95 @@ async function clearDone(){
   renderHw(); renderToday(); renderUpcoming();
   if (currentTab === 'tomorrow') renderTomorrow();
   setMsg('ok', t('msg.clearedDone'));
+}
+
+function renderSubjectBars(){
+  const box = document.getElementById('subjectBars');
+  if (!box) return;
+  const list = rows.filter(r => r.year === '2026-27');
+  const map = new Map();
+  list.forEach(r => {
+    const key = (r.subject || '—').trim() || '—';
+    const e = map.get(key) || { total: 0, done: 0 };
+    e.total++; if (r.done) e.done++;
+    map.set(key, e);
+  });
+  if (!map.size) { box.innerHTML = ''; return; }
+  const items = [...map.entries()].sort((a, b) => (b[1].total - b[1].done) - (a[1].total - a[1].done));
+  box.innerHTML = `<div style="grid-column:1/-1;font-size:.8rem;font-weight:800;color:var(--dim)">${t('subj.title')}</div>` +
+    items.map(([name, s]) => {
+      const pct = Math.round(s.done / s.total * 100);
+      return `<div class="subjitem">
+        <div class="pc"><b>${escHtml(name)}</b><span>${s.done}/${s.total}</span></div>
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+}
+
+/* ---- multi-select + bulk delete ---- */
+function toggleSel(id, on){
+  on ? selectedIds.add(id) : selectedIds.delete(id);
+  const shown = visibleHw();
+  const selAll = document.getElementById('selAll');
+  if (selAll) selAll.checked = shown.length > 0 && shown.every(r => selectedIds.has(r.id));
+  updateBulkBar();
+}
+function toggleSelectAll(on){
+  visibleHw().forEach(r => on ? selectedIds.add(r.id) : selectedIds.delete(r.id));
+  renderHw();
+}
+function updateBulkBar(){
+  const b = document.getElementById('bulkDelBtn');
+  if (!b) return;
+  b.style.display = selectedIds.size ? '' : 'none';
+  b.textContent = t('hw.deleteSelected', { n: selectedIds.size });
+}
+async function deleteSelected(){
+  if (!selectedIds.size) return;
+  if (!confirm(t('confirm.deleteSelected', { n: selectedIds.size }))) return;
+  await api('/api/homework/delete-many', { method:'POST', body: JSON.stringify({ ids: [...selectedIds] }) });
+  selectedIds.clear();
+  rows = await api('/api/homework');
+  renderHw(); renderToday(); renderUpcoming();
+  if (currentTab === 'tomorrow') renderTomorrow();
+  toast(t('msg.deletedMany'));
+}
+
+/* ---- priority + notes + duplicate + print ---- */
+async function cyclePriority(id){
+  const row = rows.find(r => r.id === id); if (!row) return;
+  const p = ((Number(row.priority) || 0) + 1) % 3;
+  row.priority = p;
+  await api('/api/homework/' + id, { method:'PATCH', body: JSON.stringify({ priority: p }) });
+  renderHw(); renderCalendar();
+}
+async function editNote(id){
+  const row = rows.find(r => r.id === id); if (!row) return;
+  const v = prompt(t('note.title', { task: row.task || row.subject || '—' }), row.note || '');
+  if (v === null) return;
+  row.note = v.slice(0, 300);
+  await api('/api/homework/' + id, { method:'PATCH', body: JSON.stringify({ note: row.note }) });
+  renderHw();
+  toast(t('note.saved'));
+}
+async function duplicateRow(id){
+  const row = rows.find(r => r.id === id); if (!row) return;
+  await api('/api/homework', { method:'POST', body: JSON.stringify({
+    year:'2026-27', subject: row.subject, task: row.task, given: row.given, due: row.due,
+    note: row.note, priority: row.priority
+  }) });
+  rows = await api('/api/homework');
+  renderHw(); renderToday(); renderUpcoming();
+  toast(t('msg.duplicated'));
+}
+function printHw(){ window.print(); }
+
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
 }
 
 function exportCsv(){
@@ -815,6 +1137,287 @@ function renderUpcoming(){
   box.innerHTML = `<div class="upcoming"><h4>${t('upcoming.title')}</h4>${list.map(r=>`
     <div class="urow"><span>${esc(r.subject||'—')}${r.task?' · '+esc(r.task):''}</span><span>${esc(r.due)} ${dueBadge(r)}</span></div>`).join('')}</div>`;
 }
+/* ---------- CALENDAR ---------- */
+function calDowLabels(){
+  return [1,2,3,4,5,6,0].map(i => `<div class="caldow">${escHtml(dayShort(i))}</div>`).join('');
+}
+function renderCalendar(){
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+  if (!calSel) calSel = isoToday();
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  const title = document.getElementById('calTitle');
+  if (title) title.textContent = `${monthName(m)} ${y}`;
+  const offset = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
+  const today = isoToday();
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(y, m, 1 - offset + i);
+    const iso = localIso(d);
+    const due = rows.filter(r => r.year === '2026-27' && r.due === iso);
+    const out = d.getMonth() !== m;
+    const dots = due.slice(0, 4).map(r => {
+      const p = Number(r.priority) || 0;
+      return `<span class="dot ${p === 2 ? 'hi' : p === 1 ? 'mid' : ''}"></span>`;
+    }).join('') + (due.length > 4 ? `<span class="more">+${due.length - 4}</span>` : '');
+    cells += `<div class="calcell ${out ? 'out' : ''} ${iso === today ? 'today' : ''} ${iso === calSel ? 'sel' : ''}" onclick="selectCalDay('${iso}')">
+      <div class="dnum">${d.getDate()}</div><div class="dots">${dots}</div></div>`;
+  }
+  grid.innerHTML = calDowLabels() + cells;
+  renderCalDay();
+}
+function selectCalDay(iso){ calSel = iso; renderCalendar(); }
+function calShift(n){ calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + n, 1); renderCalendar(); }
+function calToday(){ calCursor = new Date(); calSel = isoToday(); renderCalendar(); }
+function renderCalDay(){
+  const box = document.getElementById('calDay');
+  if (!box || !calSel) return;
+  const selDate = new Date(calSel + 'T00:00:00');
+  const label = `${dayName(selDate.getDay())}, ${selDate.getDate()} ${monthName(selDate.getMonth())}`;
+  const list = rows.filter(r => r.year === '2026-27' && r.due === calSel)
+    .sort((a, b) => (Number(b.priority) || 0) - (Number(a.priority) || 0));
+  box.innerHTML = `<h4>${escHtml(label)} · ${escHtml(t('cal.dueCount', { n: list.length }))}</h4>` +
+    (list.length
+      ? list.map(r => `<div class="cdrow ${r.done ? 'done' : ''}">
+          <span>${Number(r.priority) === 2 ? '🔴 ' : Number(r.priority) === 1 ? '🟡 ' : ''}${escHtml(r.subject || '—')}${r.task ? ' · ' + escHtml(r.task) : ''}</span>
+          <span>${r.done ? '✓' : ''}</span>
+        </div>`).join('')
+      : `<p class="stats" style="margin:0">${t('cal.none')}</p>`);
+}
+
+/* ---------- LEADERBOARD ---------- */
+async function renderRating(){
+  const el = document.getElementById('ratingList');
+  if (!el) return;
+  el.innerHTML = `<p class="stats">${t('ai.thinking')}</p>`;
+  let list = [];
+  try { list = await api('/api/leaderboard'); } catch { el.innerHTML = ''; return; }
+  if (!Array.isArray(list) || !list.length) { el.innerHTML = `<p class="stats">${t('rating.empty')}</p>`; return; }
+  el.innerHTML = list.map((u, i) => {
+    const pos = i + 1;
+    const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos;
+    const pct = u.total ? Math.round(u.done / u.total * 100) : 0;
+    return `<div class="rank ${pos === 1 ? 'top1' : ''}">
+      <div class="pos">${medal}</div>
+      ${avatarImg(u.avatar, 36)}
+      <div class="nm">
+        <b>${escHtml(u.username)}${u.id === me?.id ? ` <span style="font-size:.7rem;color:var(--blue)">${t('members.you')}</span>` : ''}</b>
+        <small>${escHtml(t('rating.done', { done: u.done, total: u.total }))}</small>
+      </div>
+      <div class="rbar"><div style="width:${pct}%"></div></div>
+      <div class="score">${u.done}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- FOCUS TIMER ---------- */
+function focusKey(){ return 'ht_focus_' + isoToday(); }
+function getFocusMinutes(){ try { return Number(localStorage.getItem(focusKey())) || 0; } catch { return 0; } }
+function setFocusMinutes(n){ try { localStorage.setItem(focusKey(), String(n)); } catch {} }
+function renderFocusSubjects(){
+  const sel = document.getElementById('focusSubject');
+  if (!sel) return;
+  const cur = sel.value;
+  const subs = [...new Set(Object.values(TIMETABLE).flat().map(x => x[1]))].sort();
+  sel.innerHTML = `<option value="">${t('focus.none')}</option>` +
+    subs.map(s => `<option value="${esc(s)}">${escHtml(subjectName(s))}</option>`).join('');
+  if (cur && subs.includes(cur)) sel.value = cur;
+  renderFocusTime();
+}
+function renderFocusTime(){
+  const el = document.getElementById('focusTime');
+  if (el) {
+    const m = Math.floor(Math.max(0, focusState.left) / 60);
+    const s = Math.max(0, focusState.left) % 60;
+    el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  const btn = document.getElementById('focusStartBtn');
+  if (btn) btn.textContent = focusState.running ? t('focus.pause') : t('focus.start');
+  const min = document.getElementById('focusMinutes');
+  if (min) min.textContent = t('focus.minutes', { n: getFocusMinutes() });
+}
+function toggleFocus(force){
+  const box = document.getElementById('focusBox');
+  if (!box) return;
+  const show = force === undefined ? !box.classList.contains('show') : !!force;
+  box.classList.toggle('show', show);
+  if (show) { renderFocusSubjects(); renderFocusTime(); }
+  else focusPause();
+}
+function focusToggle(){ focusState.running ? focusPause() : focusStart(); }
+function focusStart(){
+  if (focusState.running) return;
+  focusState.running = true;
+  if ('Notification' in window && Notification.permission === 'default') {
+    try { Notification.requestPermission().catch(() => {}); } catch {}
+  }
+  focusState.timer = setInterval(() => {
+    focusState.left--;
+    renderFocusTime();
+    if (focusState.left <= 0) focusFinish();
+  }, 1000);
+  renderFocusTime();
+}
+function focusPause(){
+  focusState.running = false;
+  if (focusState.timer) clearInterval(focusState.timer);
+  focusState.timer = null;
+  renderFocusTime();
+}
+function focusReset(){
+  focusPause();
+  focusState.left = 25 * 60;
+  renderFocusTime();
+}
+function focusFinish(){
+  focusPause();
+  setFocusMinutes(getFocusMinutes() + 25);
+  focusState.left = 25 * 60;
+  renderFocusTime();
+  toast(t('focus.done'));
+  confetti();
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(t('focus.notifyTitle'), { body: t('focus.done') }); } catch {}
+  }
+}
+
+/* ---------- LIGHT / DARK QUICK TOGGLE ---------- */
+function isLightMode(){ return !!(me && me.bgcolor && hexLum(me.bgcolor) > .55); }
+function syncThemeModeBtn(){
+  const b = document.getElementById('themeModeBtn');
+  if (!b) return;
+  b.textContent = isLightMode() ? '🌙' : '☀️';
+  b.title = t('theme.toggle');
+}
+async function toggleThemeMode(){
+  const v = isLightMode() ? '#0b0f1a' : '#f4f6fb';
+  const r = await api('/api/me', { method:'PATCH', body: JSON.stringify({ bgcolor: v }) });
+  if (r.error) return toast(trErr(r.error));
+  me.bgcolor = v;
+  paintBackground(); renderSwatches(); syncThemeModeBtn();
+  toast(t('msg.themeMode'));
+}
+
+/* ---------- AI ASSISTANT ---------- */
+function renderAIChips(){
+  const el = document.getElementById('aiChips');
+  if (!el) return;
+  const chips = [['left', 'ai.q.left'], ['plan', 'ai.q.plan'], ['tomorrow', 'ai.q.tomorrow'], ['motivate', 'ai.q.motivate']];
+  el.innerHTML = chips.map(([k, key]) => `<button class="aichip" onclick="aiQuick('${k}')">${t(key)}</button>`).join('');
+}
+function toggleAI(force){
+  const p = document.getElementById('aiPanel');
+  if (!p) return;
+  const show = force === undefined ? !p.classList.contains('show') : !!force;
+  p.classList.toggle('show', show);
+  if (show) {
+    renderAIChips();
+    if (!document.getElementById('aiMsgs').children.length) aiWelcome();
+    const inp = document.getElementById('aiInput');
+    if (inp) inp.focus();
+  }
+}
+function aiWelcome(){ aiPush('bot', t('ai.welcome', { name: me?.username || '' })); }
+function aiPush(role, text, tag){
+  const box = document.getElementById('aiMsgs');
+  if (!box) return;
+  const d = document.createElement('div');
+  d.className = 'aimsg ' + (role === 'user' ? 'user' : 'bot');
+  d.textContent = text;
+  if (tag) {
+    const s = document.createElement('span');
+    s.className = 'src';
+    s.textContent = tag;
+    d.appendChild(s);
+  }
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function aiPushHTML(html, tag){
+  const box = document.getElementById('aiMsgs');
+  if (!box) return;
+  const d = document.createElement('div');
+  d.className = 'aimsg bot';
+  d.innerHTML = html;
+  if (tag) {
+    const s = document.createElement('span');
+    s.className = 'src';
+    s.textContent = tag;
+    d.appendChild(s);
+  }
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function aiQuick(kind){
+  const keys = { left:'ai.q.left', plan:'ai.q.plan', tomorrow:'ai.q.tomorrow', motivate:'ai.q.motivate' };
+  aiSend(t(keys[kind] || 'ai.q.left'), kind);
+}
+async function aiSend(text, hint){
+  const input = document.getElementById('aiInput');
+  const msg = (text != null ? text : (input ? input.value : '')).trim();
+  if (!msg || aiBusy) return;
+  if (input) input.value = '';
+  aiPush('user', msg);
+  aiHistory.push({ role:'user', content: msg });
+  aiBusy = true;
+  const box = document.getElementById('aiMsgs');
+  const typing = document.createElement('div');
+  typing.className = 'aityping';
+  typing.textContent = t('ai.thinking');
+  if (box) { box.appendChild(typing); box.scrollTop = box.scrollHeight; }
+  let res = null;
+  try {
+    res = await api('/api/ai/chat', { method:'POST', body: JSON.stringify({ messages: aiHistory.slice(-12), lang, hint }) });
+  } catch { res = { error: true }; }
+  typing.remove();
+  aiBusy = false;
+  if (!res || res.error || (!res.reply && !res.kind)) { aiPush('bot', t('ai.error')); return; }
+  if (res.source === 'ai' && res.reply) {
+    aiPush('bot', res.reply, t('ai.source.ai'));
+    aiHistory.push({ role:'assistant', content: res.reply });
+  } else {
+    aiPushHTML(aiAnswerHTML(res), t('ai.source.local'));
+    aiHistory.push({ role:'assistant', content: t('ai.summary', { pending: res.counts.pending, done: res.counts.done, total: res.counts.total }) });
+  }
+}
+function aiAnswerHTML(res){
+  const c = res.counts || { pending:0, done:0, total:0, overdue:0 };
+  const summary = `<div>${escHtml(t('ai.summary', { pending:c.pending, done:c.done, total:c.total }))}</div>`;
+  const list = (title, items, noneKey) => {
+    if (!items.length) return `<div style="margin-top:.4rem"><b>${escHtml(title)}</b><br>${escHtml(t(noneKey))}</div>`;
+    return `<div style="margin-top:.4rem"><b>${escHtml(title)}</b><ul>${items.slice(0, 12).map(r => {
+      const pr = Number(r.priority) || 0;
+      return `<li>${pr === 2 ? '🔴 ' : pr === 1 ? '🟡 ' : ''}${escHtml(r.subject || '—')}${r.task ? ' · ' + escHtml(r.task) : ''}${r.due ? ' (' + escHtml(r.due) + ')' : ''}</li>`;
+    }).join('')}</ul></div>`;
+  };
+  const k = res.kind;
+  if (k === 'plan') {
+    const days = (res.data && res.data.days) || [];
+    const withItems = days.filter(d => d.items.length);
+    if (!withItems.length) return summary + `<div style="margin-top:.4rem">${escHtml(t('ai.planNone'))}</div>`;
+    return summary + `<div style="margin-top:.5rem"><b>${escHtml(t('ai.planTitle'))}</b></div>` +
+      withItems.map(d => {
+        const dd = new Date(d.date + 'T00:00:00');
+        const label = `${dayName(dd.getDay())}, ${dd.getDate()} ${monthName(dd.getMonth())}`;
+        return `<div style="margin-top:.35rem"><b>${escHtml(label)}</b><ul>${d.items.slice(0, 5).map(r => `<li>${escHtml(r.subject || '—')}${r.task ? ' · ' + escHtml(r.task) : ''}</li>`).join('')}</ul></div>`;
+      }).join('');
+  }
+  if (k === 'overdue') return summary + list(t('ai.overdueTitle', { n: c.overdue }), (res.data && res.data.items) || [], 'ai.noneOverdue');
+  if (k === 'tomorrow') return summary + list(t('ai.tomorrowTitle', { n: ((res.data && res.data.items) || []).length }), (res.data && res.data.items) || [], 'ai.noneTomorrow');
+  if (k === 'left') return summary + list(t('ai.leftTitle', { n: c.pending }), (res.data && res.data.items) || [], 'ai.noneLeft');
+  if (k === 'tips') return `<b>${escHtml(t('ai.tipsTitle'))}</b><ul>${[1,2,3,4].map(i => `<li>${escHtml(t('ai.tip' + i))}</li>`).join('')}</ul>`;
+  if (k === 'motivation') { const i = 1 + Math.floor(Math.random() * 3); return escHtml(t('ai.motiv' + i)); }
+  if (k === 'greeting') return escHtml(t('ai.welcome', { name: me?.username || '' }));
+  if (k === 'help') return escHtml(t('ai.help'));
+  return summary + `<div style="margin-top:.4rem">${escHtml(t('ai.help'))}</div>`;
+}
+function clearAI(){
+  aiHistory = [];
+  const box = document.getElementById('aiMsgs');
+  if (box) box.innerHTML = '';
+  aiWelcome();
+}
+
 function avatarImg(src, size){
   return src
     ? `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;vertical-align:middle">`
@@ -925,6 +1528,7 @@ function paintBackground(){
     pv.style.backgroundImage = me && me.bg ? `url("${me.bg}")` : 'none';
     pv.style.backgroundColor = (!me || !me.bg) && me && me.bgcolor ? me.bgcolor : '';
   }
+  syncThemeModeBtn();
 }
 
 /* kept for older call sites */
@@ -1177,7 +1781,10 @@ async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH
 async function toggleDone(id,checked){
   await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})});
   rows.find(r=>r.id===id).done=checked;
-  renderHw(); renderToday();
+  renderHw(); renderToday(); renderUpcoming();
+  if (currentTab === 'tomorrow') renderTomorrow();
+  if (viewCalendar.style.display !== 'none') renderCalendar();
+  if (viewRating.style.display !== 'none') renderRating();
   const list = rows.filter(r=>r.year==='2026-27');
   if (checked && list.length && list.every(r=>r.done)) confetti();
 }
