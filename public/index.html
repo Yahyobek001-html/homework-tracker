@@ -1367,7 +1367,7 @@ async function aiSend(text, hint){
   if (box) { box.appendChild(typing); box.scrollTop = box.scrollHeight; }
   let res = null;
   try {
-    res = await api('/api/ai/chat', { method:'POST', body: JSON.stringify({ messages: aiHistory.slice(-12), lang, hint }) });
+    res = await api('/api/ai/chat', { method:'POST', body: JSON.stringify({ messages: aiHistory.slice(-12), lang, hint, today: isoToday() }) });
   } catch { res = { error: true }; }
   typing.remove();
   aiBusy = false;

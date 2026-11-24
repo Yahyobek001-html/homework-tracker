@@ -13,7 +13,14 @@ if (process.env.DATABASE_URL) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const toPg = (sql) => { let i = 0; return sql.replace(/\?/g, () => `$${++i}`); };
   q = async (sql, p = []) => (await pool.query(toPg(sql), p)).rows;
-  run = async (sql, p = []) => (await pool.query(toPg(sql), p)).rows[0] || {};
+  run = async (sql, p = []) => {
+    let text = toPg(sql);
+    const isInsert = /^\s*insert\s+/i.test(text);
+    if (isInsert && !/\breturning\b/i.test(text)) text += " RETURNING *";
+    const row = (await pool.query(text, p)).rows[0] || {};
+    if (isInsert) row.lastInsertRowid = row.id;
+    return row;
+  };
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -495,7 +502,8 @@ app.post("/api/ai/chat", async (req, res) => {
   }));
   const now = new Date();
   const iso = (d) => d.toISOString().slice(0, 10);
-  const today = iso(now);
+  const clientToday = /^\d{4}-\d{2}-\d{2}$/.test(body.today || "") ? body.today : "";
+  const today = clientToday || iso(now);
   const tomorrow = iso(new Date(now.getTime() + 86400000));
   const pending = rows.filter(r => !r.done);
   const overdue = pending.filter(r => r.due && r.due < today);
