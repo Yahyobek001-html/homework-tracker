@@ -52,6 +52,7 @@ if (process.env.DATABASE_URL) {
       due TEXT DEFAULT '',
       note TEXT DEFAULT '',
       priority INTEGER DEFAULT 0,
+      done_at TEXT DEFAULT '',
       done INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS settings (
@@ -80,6 +81,7 @@ if (process.env.DATABASE_URL) {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS accent TEXT DEFAULT ''");
   await pool.query("ALTER TABLE homework ADD COLUMN IF NOT EXISTS note TEXT DEFAULT ''");
   await pool.query("ALTER TABLE homework ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0");
+  await pool.query("ALTER TABLE homework ADD COLUMN IF NOT EXISTS done_at TEXT DEFAULT ''");
 } else {
   const { DatabaseSync } = await import("node:sqlite");
   const fs = await import("node:fs");
@@ -107,7 +109,7 @@ if (process.env.DATABASE_URL) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL, year TEXT NOT NULL,
       subject TEXT DEFAULT '', task TEXT DEFAULT '',
-      given TEXT DEFAULT '', due TEXT DEFAULT '', note TEXT DEFAULT '', priority INTEGER DEFAULT 0, done INTEGER DEFAULT 0
+      given TEXT DEFAULT '', due TEXT DEFAULT '', note TEXT DEFAULT '', priority INTEGER DEFAULT 0, done_at TEXT DEFAULT '', done INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE IF NOT EXISTS announcement_log (
@@ -126,7 +128,7 @@ if (process.env.DATABASE_URL) {
   for (const col of ["bio TEXT DEFAULT ''", "bg TEXT DEFAULT ''", "theme TEXT DEFAULT 'ocean'", "lang TEXT DEFAULT 'uz'", "bgcolor TEXT DEFAULT ''", "accent TEXT DEFAULT ''"]) {
     try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch {}
   }
-  for (const col of ["note TEXT DEFAULT ''", "priority INTEGER DEFAULT 0"]) {
+  for (const col of ["note TEXT DEFAULT ''", "priority INTEGER DEFAULT 0", "done_at TEXT DEFAULT ''"]) {
     try { db.exec(`ALTER TABLE homework ADD COLUMN ${col}`); } catch {}
   }
   q = (sql, p = []) => db.prepare(sql).all(...p);
@@ -373,7 +375,8 @@ app.post("/api/homework/done-all", async (req, res) => {
   const user = await authUser(req);
   if (!user) return res.status(401).json({ error: "Not logged in" });
   const year = (req.body || {}).year || "2026-27";
-  await run("UPDATE homework SET done = 1 WHERE user_id = ? AND year = ? AND done = 0", [user.id, year]);
+  const today = /^\d{4}-\d{2}-\d{2}$/.test((req.body || {}).today || "") ? req.body.today : new Date().toISOString().slice(0, 10);
+  await run("UPDATE homework SET done = 1, done_at = ? WHERE user_id = ? AND year = ? AND done = 0", [today, user.id, year]);
   await track(user.id, "completed all homework");
   res.json({ ok: true });
 });
@@ -423,11 +426,15 @@ app.patch("/api/homework/:id", async (req, res) => {
   const row = rows[0];
   if (!row) return res.status(404).json({ error: "Not found" });
   const b = req.body || {};
-  await run("UPDATE homework SET subject=?, task=?, given=?, due=?, done=?, note=?, priority=? WHERE id=?",
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(b.doneAt || "") ? b.doneAt : new Date().toISOString().slice(0, 10);
+  const nextDone = "done" in b ? (b.done ? 1 : 0) : row.done;
+  const nextDoneAt = nextDone ? (row.done ? (row.done_at || today) : today) : "";
+  await run("UPDATE homework SET subject=?, task=?, given=?, due=?, done=?, note=?, priority=?, done_at=? WHERE id=?",
     [b.subject ?? row.subject, b.task ?? row.task, b.given ?? row.given, b.due ?? row.due,
-     ("done" in b ? (b.done ? 1 : 0) : row.done),
+     nextDone,
      ("note" in b ? String(b.note || "").slice(0, 300) : (row.note || "")),
      ("priority" in b ? Math.max(0, Math.min(2, Number(b.priority) || 0)) : (Number(row.priority) || 0)),
+     nextDoneAt,
      row.id]);
   if ("done" in b) await track(user.id, (b.done ? "✅ done" : "↩ undone") + ` ${row.subject || ""} homework`);
   res.json({ ok: true });

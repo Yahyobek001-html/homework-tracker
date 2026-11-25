@@ -49,8 +49,11 @@
   body.lightbg .themebtn.on { border-color:#111827; }
   h1 { font-size:2rem; letter-spacing:-.5px; }
   h2 { font-size:1.35rem; margin:1.2rem 0 .6rem;
-       background:linear-gradient(90deg,var(--blue),var(--pink));
-       -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-.3px; }
+       background:linear-gradient(90deg,var(--blue),var(--pink),var(--blue));
+       background-size:200% auto;
+       -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-.3px;
+       animation:shimmer 7s linear infinite; }
+  @keyframes shimmer { to { background-position:200% center; } }
   button { border:none; padding:.55rem 1.1rem; border-radius:12px; cursor:pointer; color:#fff; font-weight:600;
            background:var(--grad); transition:transform .16s, box-shadow .16s, filter .16s;
            box-shadow:0 8px 20px -10px var(--blue); }
@@ -310,6 +313,90 @@
     tr.done td { opacity:1; }
   }
 
+  /* ---- lively visuals: aurora, hero, XP, quest ---- */
+  body { position:relative; overflow-x:hidden; }
+  .aurora { position:fixed; inset:-25vmax; z-index:-1; pointer-events:none; filter:blur(80px); opacity:.5; transition:opacity .4s; }
+  .aurora i { position:absolute; display:block; width:42vmax; height:42vmax; border-radius:50%; mix-blend-mode:screen; animation:blobMove 24s ease-in-out infinite alternate; }
+  .aurora i:nth-child(1){ background:var(--blue); top:-6%; left:-4%; animation-duration:22s; }
+  .aurora i:nth-child(2){ background:var(--pink); top:10%; right:-10%; animation-duration:28s; animation-delay:-6s; }
+  .aurora i:nth-child(3){ background:var(--green); bottom:-18%; left:22%; opacity:.55; animation-duration:32s; animation-delay:-12s; }
+  .aurora i:nth-child(4){ background:var(--gold); bottom:2%; right:18%; opacity:.35; animation-duration:26s; animation-delay:-3s; }
+  body.lightbg .aurora { opacity:.22; }
+  body.no-aurora .aurora { display:none; }
+  @keyframes blobMove { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(6vmax,-4vmax) scale(1.15)} 100%{transform:translate(-4vmax,5vmax) scale(.92)} }
+
+  .auth-feats { display:flex; flex-wrap:wrap; gap:.4rem; margin:.2rem 0 1rem; }
+  .auth-feats span { font-size:.72rem; font-weight:700; color:var(--dim); border:1px solid var(--stroke);
+    background:rgba(255,255,255,.05); border-radius:999px; padding:.25rem .6rem; animation:pop .5s both; }
+  .auth-feats span:nth-child(2){ animation-delay:.08s }
+  .auth-feats span:nth-child(3){ animation-delay:.16s }
+  .auth-feats span:nth-child(4){ animation-delay:.24s }
+
+  .lvlchip { display:inline-flex; align-items:center; gap:.25rem; font-size:.72rem; font-weight:900; letter-spacing:.2px;
+    color:#3a2a00; background:linear-gradient(135deg,#ffcc5c,#ff9f43); border-radius:999px; padding:.22rem .6rem;
+    box-shadow:0 6px 16px -9px #ffcc5c; animation:pop .35s both; }
+  .lvlchip:empty { display:none; }
+
+  .hero { position:relative; overflow:hidden; border-radius:24px; padding:1.15rem 1.25rem;
+    margin:.2rem 0 1.1rem; border:1px solid var(--stroke); box-shadow:var(--shadow);
+    background:linear-gradient(135deg, rgba(109,141,255,.18), rgba(255,122,198,.10) 60%, rgba(61,220,151,.08));
+    backdrop-filter:blur(18px); animation:pop .45s ease-out both; }
+  .hero::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(520px 180px at 8% 0%, var(--blue)33, transparent 70%),
+               radial-gradient(460px 200px at 95% 100%, var(--pink)2b, transparent 70%); }
+  .hero-top { position:relative; display:grid; grid-template-columns:1.45fr .55fr; gap:1rem; align-items:center; }
+  .hero .hello { font-size:1.35rem; font-weight:800; letter-spacing:-.3px; }
+  .hero .hello b { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero .wave { display:inline-block; animation:wave 2.6s ease-in-out infinite; transform-origin:70% 70%; }
+  @keyframes wave { 0%,60%,100%{transform:rotate(0)} 10%{transform:rotate(16deg)} 20%{transform:rotate(-8deg)} 30%{transform:rotate(14deg)} 40%{transform:rotate(-4deg)} 50%{transform:rotate(10deg)} }
+  .hero-sub { color:var(--dim); font-size:.86rem; margin:.25rem 0 .7rem; }
+  .xprow { display:flex; align-items:center; gap:.55rem; max-width:430px; }
+  .xpbar { flex:1; height:9px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; }
+  .xpbar > div { height:100%; border-radius:999px; background:var(--grad); transition:width .9s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 0 12px var(--blue); }
+  .xptext { font-size:.7rem; font-weight:800; color:var(--dim); white-space:nowrap; }
+  .hero-chips { display:flex; flex-wrap:wrap; gap:.35rem; margin:.75rem 0 .6rem; }
+  .hero .chip { font-size:.72rem; font-weight:800; padding:.28rem .62rem; border-radius:999px;
+    background:rgba(255,255,255,.07); border:1px solid var(--stroke); }
+  .hero .chip.streak { background:linear-gradient(135deg,#ffcc5c2e,#ff9f431f); border-color:#ffcc5c55; color:var(--gold); }
+  .hero .chip.warn { background:#ff6b6b1f; border-color:#ff6b6b44; color:#ff9b9b; }
+  .herobtn { margin-top:.1rem; }
+  .hero-side { text-align:center; }
+  .mascot { font-size:3rem; line-height:1; animation:floatY 3.2s ease-in-out infinite; filter:drop-shadow(0 10px 18px #0007); }
+  @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  .hero .quote { margin-top:.35rem; font-size:.72rem; color:var(--dim); line-height:1.45; }
+  .hero .quote small { display:block; text-transform:uppercase; letter-spacing:.8px; font-size:.6rem; opacity:.7; margin-bottom:.15rem; }
+
+  .quest { position:relative; display:flex; align-items:center; gap:.6rem; margin-top:.55rem; padding:.55rem .75rem;
+    border-radius:14px; border:1px dashed var(--stroke); background:rgba(255,255,255,.04); font-size:.82rem; }
+  .quest .qic { font-size:1.1rem; }
+  .quest .qtxt { flex:1; color:var(--dim); }
+  .quest .qtxt b { display:block; color:var(--txt); font-size:.7rem; text-transform:uppercase; letter-spacing:.7px; margin-bottom:.1rem; }
+  .quest .qsub { font-weight:900; font-size:.72rem; color:var(--gold); white-space:nowrap; }
+  .quest.on { border-style:solid; border-color:#3ddc9755; background:#3ddc9714; }
+  .quest.on .qsub { color:var(--green); }
+
+  .view-anim { animation:slideUp .32s ease-out both; }
+  @keyframes slideUp { from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:none} }
+  .statcard { transition:transform .18s, border-color .18s, background .18s; }
+  .statcard:hover { transform:translateY(-3px); border-color:#6d8dff55; background:rgba(255,255,255,.08); }
+  #rows tr { transition:background .15s; }
+  #rows tr:hover { background:rgba(255,255,255,.035); }
+
+  .emojiburst { position:fixed; z-index:998; pointer-events:none; animation:burst .9s ease-out forwards; }
+  @keyframes burst { 0%{transform:scale(.4) translateY(0); opacity:1} 100%{transform:scale(1.5) translateY(-90px); opacity:0} }
+
+  @media (max-width:700px) {
+    .hero-top { grid-template-columns:1fr; }
+    .hero-side { display:none; }
+    .hero .hello { font-size:1.15rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aurora i, .mascot, .hero .wave, .auth-feats span { animation:none !important; }
+    h2 { animation:none; }
+    .view-anim { animation:none; }
+  }
+
   /* language */
   select.langsel { background:rgba(255,255,255,.06); color:var(--txt); border:1px solid var(--stroke);
                    border-radius:10px; padding:.45rem .6rem; font-weight:600; font-family:inherit;
@@ -368,9 +455,12 @@
 </head>
 <body>
 
+<div class="aurora" id="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
 <div id="auth" class="anim-in">
   <h1 data-i18n="app.title">📚 Homework Tracker</h1>
   <p class="sub" data-i18n="app.sub">7-01 · Track your homework, tick it off, stay ahead.</p>
+  <div class="auth-feats"><span>🤖 AI</span><span>🔥 Streak</span><span>🏆 XP</span><span>📅 Calendar</span></div>
   <p class="error" id="err"></p>
   <input id="u" data-i18n-ph="auth.user" placeholder="Username" autocomplete="username">
   <input id="p" type="password" data-i18n-ph="auth.pass" placeholder="Password" autocomplete="current-password">
@@ -387,7 +477,7 @@
 <div id="app">
   <div class="topbar anim-in">
     <div class="left">
-      <h1 data-i18n="app.title">📚 Homework Tracker</h1> <span id="roleBadge"></span>
+      <h1 data-i18n="app.title">📚 Homework Tracker</h1> <span id="roleBadge"></span> <span id="levelChip" class="lvlchip" title="XP"></span>
     </div>
     <div class="right">
       <span id="myAvatar"></span>
@@ -427,6 +517,7 @@
   </div>
 
   <div id="viewToday">
+    <div id="heroCard"></div>
     <h2 id="todayTitle"></h2>
     <p class="stats" data-i18n="today.stats">Your timetable for today — click “+ Homework” next to a subject to quickly add homework.</p>
     <div id="upcomingBox"></div>
@@ -677,6 +768,7 @@ const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Satur
 
 let me = null, rows = [], currentTab = 'today', lastAnn = null, anonLangPick = null;
 let selectedIds = new Set();
+let lastLevel = null;
 let calCursor = new Date(), calSel = null;
 let focusState = { left: 25 * 60, total: 25 * 60, running: false, timer: null };
 let aiHistory = [], aiBusy = false;
@@ -761,6 +853,8 @@ async function init(){
   const ann = await api('/api/announcement');
   showAnnouncement(ann);
   rows = await api('/api/homework');
+  lastLevel = null;
+  selectedIds.clear();
   applyLang(lang, false);
   applyTheme(me.theme || 'ocean');
   paintBackground();
@@ -780,6 +874,8 @@ function tab(t){
   Object.entries(tabs).forEach(([k, el]) => el.classList.toggle('active', k === t));
   const views = { today: viewToday, tomorrow: viewTomorrow, hw: viewHw, calendar: viewCalendar, rating: viewRating, class: viewClass, members: viewMembers };
   Object.entries(views).forEach(([k, el]) => { el.style.display = k === t ? '' : 'none'; });
+  const activeView = views[t];
+  if (activeView) { activeView.classList.remove('view-anim'); void activeView.offsetWidth; activeView.classList.add('view-anim'); }
   if (t === 'tomorrow') renderTomorrow();
   if (t === 'class') renderClassInfo();
   if (t === 'calendar') renderCalendar();
@@ -789,7 +885,88 @@ function tab(t){
 
 function todayName(){ return DAYS[new Date().getDay()]; }
 
+/* ---------- GAMIFICATION: XP, level, streak, daily quest ---------- */
+function dayOfYear(){
+  const d = new Date();
+  return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+}
+function hwList(){ return rows.filter(r => r.year === '2026-27'); }
+function computeXP(list){
+  const l = list || hwList();
+  return l.filter(r => r.done).length * 10 + l.filter(r => r.done && r.note).length * 3;
+}
+function xpLevel(xp){ return Math.floor(xp / 100) + 1; }
+function doneOn(date){
+  return hwList().filter(r => r.done && r.done_at === date).length;
+}
+function computeStreak(){
+  const set = new Set(hwList().filter(r => r.done && r.done_at).map(r => r.done_at));
+  if (!set.size) return 0;
+  const d = new Date();
+  if (!set.has(localIso(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (set.has(localIso(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function checkLevelUp(level){
+  const chip = document.getElementById('levelChip');
+  if (chip) chip.textContent = `Lv ${level} · 🔥 ${computeStreak()}`;
+  if (lastLevel !== null && level > lastLevel) {
+    toast(t('level.up', { n: level }));
+    confetti();
+    emojiBurst(['🎉','⭐','🏆','✨']);
+  }
+  lastLevel = level;
+}
+function renderHero(){
+  const box = document.getElementById('heroCard');
+  if (!box || !me) return;
+  const list = hwList();
+  const total = list.length, done = list.filter(r => r.done).length, pending = total - done;
+  const overdue = list.filter(r => !r.done && r.due && daysUntil(r.due) < 0).length;
+  const xp = computeXP(list), level = xpLevel(xp), inLevel = xp % 100;
+  const streak = computeStreak();
+  const hour = new Date().getHours();
+  const gkey = hour < 12 ? 'greet.morning' : hour < 18 ? 'greet.afternoon' : hour < 22 ? 'greet.evening' : 'greet.night';
+  const quote = t('ai.motiv' + (dayOfYear() % 3 + 1));
+  const doneToday = doneOn(isoToday());
+  let quest;
+  if (!pending) quest = { on: true, text: t('quest.allDone'), sub: '🎉' };
+  else if (doneToday > 0) quest = { on: true, text: t('quest.one'), sub: t('quest.done') };
+  else quest = { on: false, text: t('quest.one'), sub: '0/1' };
+
+  box.innerHTML = `
+    <div class="hero-top">
+      <div class="hero-main">
+        <div class="hello">${escHtml(t(gkey))}, <b>${escHtml(me.username)}</b> <span class="wave">👋</span></div>
+        <div class="hero-sub">${escHtml(t('hero.sub', { pending, done, total }))}</div>
+        <div class="xprow">
+          <span class="lvlchip">${escHtml(t('hero.level', { n: level }))}</span>
+          <div class="xpbar"><div style="width:${inLevel}%"></div></div>
+          <span class="xptext">${escHtml(t('hero.xp', { n: xp, max: 100 }))}</span>
+        </div>
+        <div class="hero-chips">
+          <span class="chip streak">${streak ? escHtml(t('hero.streak', { n: streak })) : escHtml(t('hero.streakNone'))}</span>
+          <span class="chip">✅ ${done}/${total}</span>
+          ${overdue ? `<span class="chip warn">⏰ ${overdue}</span>` : ''}
+        </div>
+        <button class="mini herobtn" onclick="tab('hw')">${t('hero.open')} →</button>
+      </div>
+      <div class="hero-side">
+        <div class="mascot" title="${escHtml(pending ? t('hero.todayCount', { n: pending }) : t('hero.allDone'))}">🦉</div>
+        <div class="quote"><small>${t('hero.quote')}</small><span>“${escHtml(quote)}”</span></div>
+      </div>
+    </div>
+    <div class="quest ${quest.on ? 'on' : ''}">
+      <span class="qic">🎯</span>
+      <span class="qtxt"><b>${t('quest.title')}</b>${escHtml(quest.text)}</span>
+      <span class="qsub">${escHtml(quest.sub)}</span>
+    </div>`;
+  checkLevelUp(level);
+}
+
 function renderToday(){
+  renderHero();
   const day = todayName();
   const d = new Date();
   todayTitle.textContent = t('today.title', { day: dayName(d.getDay()), date: d.toLocaleDateString(localeOf()) });
@@ -1000,16 +1177,17 @@ function renderHw(){
   renderSubjectBars();
   updateBulkBar();
   renderAch();
+  renderHero();
 }
 
 async function markAllDone(){
   if (!rows.some(r=>r.year==='2026-27' && !r.done)) return;
   if (!confirm(t('confirm.markAll'))) return;
-  await api('/api/homework/done-all', { method:'POST', body: JSON.stringify({ year:'2026-27' }) });
+  await api('/api/homework/done-all', { method:'POST', body: JSON.stringify({ year:'2026-27', today: isoToday() }) });
   rows = await api('/api/homework');
   renderHw(); renderToday();
   if (currentTab === 'tomorrow') renderTomorrow();
-  confetti();
+  confetti(); emojiBurst();
 }
 
 async function clearDone(){
@@ -1276,6 +1454,7 @@ function focusFinish(){
   renderFocusTime();
   toast(t('focus.done'));
   confetti();
+  emojiBurst(['⏱','🎉','✨','💪']);
   if ('Notification' in window && Notification.permission === 'granted') {
     try { new Notification(t('focus.notifyTitle'), { body: t('focus.done') }); } catch {}
   }
@@ -1461,7 +1640,9 @@ const THEMES = {
   forest:  { a:'#4ade80', b:'#a3e635' },
   grape:   { a:'#a78bfa', b:'#f472b6' },
   aqua:    { a:'#22d3ee', b:'#818cf8' },
-  rose:    { a:'#fb7185', b:'#fda4af' }
+  rose:    { a:'#fb7185', b:'#fda4af' },
+  neon:    { a:'#00f5d4', b:'#f15bb5' },
+  lava:    { a:'#ff5400', b:'#ffd60a' }
 };
 let curTheme = 'ocean';
 function applyTheme(name){
@@ -1513,6 +1694,7 @@ function paintBackground(){
   const b = document.body;
   b.classList.remove('lightbg');
   b.style.backgroundAttachment = '';
+  b.classList.toggle('no-aurora', !!(me && me.bg));
   if (me && me.bg) {
     b.style.background = `linear-gradient(rgba(7,10,20,.70), rgba(7,10,20,.88)), url("${me.bg}") center/cover no-repeat fixed`;
     b.style.backgroundAttachment = 'fixed';
@@ -1779,16 +1961,35 @@ setInterval(()=>{ if (me && me.role==='owner' && activityBox && activityBox.styl
 
 async function saveRow(id,key,val){ await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({[key]:val})}); rows.find(r=>r.id===id)[key]=val; renderToday(); }
 async function toggleDone(id,checked){
-  await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked})});
-  rows.find(r=>r.id===id).done=checked;
+  const today = isoToday();
+  await api('/api/homework/'+id,{method:'PATCH',body:JSON.stringify({done:checked,doneAt:today})});
+  const r = rows.find(r=>r.id===id);
+  r.done=checked;
+  r.done_at = checked ? (r.done_at || today) : '';
   renderHw(); renderToday(); renderUpcoming();
   if (currentTab === 'tomorrow') renderTomorrow();
   if (viewCalendar.style.display !== 'none') renderCalendar();
   if (viewRating.style.display !== 'none') renderRating();
   const list = rows.filter(r=>r.year==='2026-27');
-  if (checked && list.length && list.every(r=>r.done)) confetti();
+  if (checked) emojiBurst(['✅','✨','💪'], 7);
+  if (checked && list.length && list.every(r=>r.done)) { confetti(); emojiBurst(['🎉','🏆','⭐','✨']); }
 }
 
+function emojiBurst(list, count){
+  list = list || ['🎉','✨','⭐','💪','🔥'];
+  count = count || 16;
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('span');
+    s.className = 'emojiburst';
+    s.textContent = list[i % list.length];
+    s.style.left = (32 + Math.random() * 36) + 'vw';
+    s.style.top = (34 + Math.random() * 22) + 'vh';
+    s.style.fontSize = (16 + Math.random() * 24) + 'px';
+    s.style.animationDelay = (Math.random() * .3) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1900);
+  }
+}
 function confetti(){
   const colors = ['#6d8dff','#ff7ac6','#3ddc97','#ffcc5c','#8f6dff','#ffffff'];
   for (let i=0;i<130;i++){
